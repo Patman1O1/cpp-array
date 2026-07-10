@@ -10,7 +10,7 @@ class TestPackage(ConanFile):
         self.requires(self.tested_reference_str)
 
     def build_requirements(self) -> None:
-        self.tool_requires("cmake/[>={{ cmake.version }}]")
+        self.tool_requires("cmake/[>=4.3.0]")
 
     def layout(self) -> None:
         cmake_layout(self)

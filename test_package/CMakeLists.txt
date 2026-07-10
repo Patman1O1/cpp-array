@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------------------------------------------------
 # Information
 #-----------------------------------------------------------------------------------------------------------------------
-cmake_minimum_required(VERSION {{ cmake.version }})
+cmake_minimum_required(VERSION 4.3.0)
 project("test_package"
         VERSION 0.1.0
         DESCRIPTION ""
@@ -20,7 +20,7 @@ cmake_file_api(
 #-----------------------------------------------------------------------------------------------------------------------
 if(PROJECT_IS_TOP_LEVEL)
     # C++ Settings
-    set(CMAKE_CXX_STANDARD {{ cmake.cxx_std }})
+    set(CMAKE_CXX_STANDARD 23)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -41,7 +41,7 @@ endif()
 #-----------------------------------------------------------------------------------------------------------------------
 # Dependencies
 #-----------------------------------------------------------------------------------------------------------------------
-find_package({{ project.name }} REQUIRED)
+find_package(cxx_array REQUIRED)
 include(GNUInstallDirs)
 
 #-----------------------------------------------------------------------------------------------------------------------

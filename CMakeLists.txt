@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------------------------------------------------
 # Information
 #-----------------------------------------------------------------------------------------------------------------------
-cmake_minimum_required(VERSION {{ cmake.version }})
-project("{{ project.name }}"
-        VERSION {{ project.version }}
-        DESCRIPTION "{{ project.description }}"
+cmake_minimum_required(VERSION 4.3.0)
+project("cxx_array"
+        VERSION 0.1.0
+        DESCRIPTION ""
         LANGUAGES CXX
 )
 
@@ -20,7 +20,7 @@ cmake_file_api(
 #-----------------------------------------------------------------------------------------------------------------------
 if(PROJECT_IS_TOP_LEVEL)
     # CXX Settings
-    set(CMAKE_CXX_STANDARD {{ cmake.cxx_std }})
+    set(CMAKE_CXX_STANDARD 23)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -32,11 +32,6 @@ if(PROJECT_IS_TOP_LEVEL)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
     # Project Options
-    {% if project.type == "Shared Library" %}
-    option(BUILD_SHARED_LIBS "Build the project as a shared library" ON)
-    {% elif project.type == "Static Library" %}
-    option(BUILD_SHARED_LIBS "Build the project as a shared library" OFF)
-    {% endif %}
     option(BUILD_TESTS "Build the project's test suite" OFF)
 
     # Set default build type if not specified
@@ -55,7 +50,6 @@ endif()
 
 include(GNUInstallDirs)
 
-{% if project.type != "Executable" %}
 #-----------------------------------------------------------------------------------------------------------------------
 # Installation
 #-----------------------------------------------------------------------------------------------------------------------
@@ -66,46 +60,44 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
 endif()
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: {{ project.name }}_headers
-# Alias: {{ project.namespace }}::{{ project.name }}_headers
+# Target: cxx_array_headers
+# Alias: cxx_array::cxx_array_headers
 # Type: Interface Library
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library({{ project.name }}_headers INTERFACE)
+add_library(cxx_array_headers INTERFACE)
 
 # Target alias
-add_library({{ project.namespace }}::{{ project.name }}_headers ALIAS {{ project.name }}_headers)
+add_library(cxx_array::cxx_array_headers ALIAS cxx_array_headers)
 
 # Target headers
-target_include_directories({{ project.name }}_headers
+target_include_directories(cxx_array_headers
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-{% endif %}
 
-{% if project.type == "Interface Library" %}
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: {{ project.name }}
-# Alias: {{ project.namespace }}::{{ project.name }}
-# Type: {{ project.type }}
-# Dependencies: {{ project.namespace }}::{{ project.name }}_headers
+# Target: cxx_array
+# Alias: cxx_array::cxx_array
+# Type: Interface Library
+# Dependencies: cxx_array::cxx_array_headers
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library({{ project.name }} INTERFACE)
+add_library(cxx_array INTERFACE)
 
 # Target alias
-add_library({{ project.namespace }}::{{ project.name }} ALIAS {{ project.name }})
+add_library(cxx_array::cxx_array ALIAS cxx_array)
 
 # Target dependencies
-target_link_libraries({{ project.name }}
+target_link_libraries(cxx_array
     INTERFACE
-        {{ project.namespace }}::{{ project.name }}_headers
+        cxx_array::cxx_array_headers
 )
 
 # Target properties
-set_target_properties({{ project.name }} PROPERTIES
-        OUTPUT_NAME {{ project.name }}
+set_target_properties(cxx_array PROPERTIES
+        OUTPUT_NAME cxx_array
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
         CXX_VISIBILITY_PRESET hidden
@@ -113,15 +105,14 @@ set_target_properties({{ project.name }} PROPERTIES
 )
 
 if(NOT CMAKE_SKIP_INSTALL_RULES)
-    # Install {{ project.name }}
-    install(TARGETS {{ project.name }}
-            RUNTIME COMPONENT {{ project.name }}
-            LIBRARY COMPONENT {{ project.name }}
-            NAMELINK_COMPONENT {{ project.name }}
-            ARCHIVE COMPONENT {{ project.name }}
+    # Install cxx_array
+    install(TARGETS cxx_array
+            RUNTIME COMPONENT cxx_array
+            LIBRARY COMPONENT cxx_array
+            NAMELINK_COMPONENT cxx_array
+            ARCHIVE COMPONENT cxx_array
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
-{% endif %}
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Target: uninstall
@@ -134,9 +125,6 @@ add_custom_target(uninstall
 #-----------------------------------------------------------------------------------------------------------------------
 # Subdirectories
 #-----------------------------------------------------------------------------------------------------------------------
-{% if project.type != "Interface Library" %}
-add_subdirectory(src)
-{% endif %}
 
 if(BUILD_TESTS)
     add_subdirectory(tests)
