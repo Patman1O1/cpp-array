@@ -15,5 +15,5 @@ target_sources(test_package
 # Target dependencies
 target_link_libraries(test_package
     PRIVATE
-        cxx_array::cxx_array
+        collections::array
 )
