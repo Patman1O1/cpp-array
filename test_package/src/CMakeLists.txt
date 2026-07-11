@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------------------------------------------------
 # Target: test_package
 # Type: Executable
-# Dependencies: cxx_array::cxx_array
+# Dependencies: collections::array
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
 add_executable(test_package)
