@@ -5,30 +5,30 @@ include(GoogleTest)
 enable_testing()
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: cxx_array_test
-# Alias: cxx_array::cxx_array_test
+# Target: array_test
+# Alias: collections::array_test
 # Type: Executable
-# Dependencies: GTest::gtest_main, GTest::gmock_main, cxx_array::cxx_array_headers
+# Dependencies: GTest::gtest_main, GTest::gmock_main, collections::array_headers
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_executable(cxx_array_test)
+add_executable(array_test)
 
 # Target alias
-add_executable(cxx_array::cxx_array_test ALIAS cxx_array_test)
+add_executable(collections::array_test ALIAS array_test)
 
 # Target sources
-target_sources(cxx_array_test
+target_sources(array_test
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/cxx_array_test.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/array_test.cpp
 )
 
 # Target dependencies
-target_link_libraries(cxx_array_test
+target_link_libraries(array_test
     PRIVATE
-        cxx_array::cxx_array_headers
+        collections::array_headers
         GTest::gtest_main
         GTest::gmock_main
 )
 
 # Test discovery
-gtest_discover_tests(cxx_array_test)
+gtest_discover_tests(array_test)
