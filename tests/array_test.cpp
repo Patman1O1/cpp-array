@@ -3,8 +3,8 @@
 #include <gmock/gmock.h>
 
 // Local Includes
-#include <cxx_array/cxx_array.hpp>
+#include <collections/array.hpp>
 
-namespace cxx_array_testing {
+namespace collections::array_testing {
 
-} // namespace cxx_array_testing
+} // namespace collections::array_testing
