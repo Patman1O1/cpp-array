@@ -1,5 +1,5 @@
-#include <cxx_array/cxx_array.hpp>
+#include <collections/array.hpp>
 
-int main(void) {
+int main() {
     return 0;
 }
