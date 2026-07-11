@@ -2,8 +2,8 @@ from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 import os
 
-class CxxArray(ConanFile):
-    name = "cxx_array"
+class Array(ConanFile):
+    name = "array"
     version = "0.1.0"
     author = "Patman1O1"
     description = ""
@@ -45,6 +45,6 @@ class CxxArray(ConanFile):
         CMake(self).install()
 
     def package_info(self) -> None:
-        self.cpp_info.set_property("cmake_target_name", "cxx_array::cxx_array")
+        self.cpp_info.set_property("cmake_target_name", "collections::array")
         self.cpp_info.bindirs = []
         self.cpp_info.libdirs = []
