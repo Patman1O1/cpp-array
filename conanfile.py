@@ -3,7 +3,7 @@ from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 import os
 
 class Array(ConanFile):
-    name = "array"
+    name = "collections-array"
     version = "0.1.0"
     author = "Patman1O1"
     description = ""
