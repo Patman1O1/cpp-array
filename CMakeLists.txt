@@ -2,7 +2,7 @@
 # Information
 #-----------------------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 4.3.0)
-project("cxx_array"
+project("array"
         VERSION 0.1.0
         DESCRIPTION ""
         LANGUAGES CXX
@@ -20,7 +20,7 @@ cmake_file_api(
 #-----------------------------------------------------------------------------------------------------------------------
 if(PROJECT_IS_TOP_LEVEL)
     # CXX Settings
-    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD 26)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -60,44 +60,44 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
 endif()
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: cxx_array_headers
-# Alias: cxx_array::cxx_array_headers
+# Target: array_headers
+# Alias: collections::array_headers
 # Type: Interface Library
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library(cxx_array_headers INTERFACE)
+add_library(array_headers INTERFACE)
 
 # Target alias
-add_library(cxx_array::cxx_array_headers ALIAS cxx_array_headers)
+add_library(collections::array_headers ALIAS array_headers)
 
 # Target headers
-target_include_directories(cxx_array_headers
+target_include_directories(array_headers
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: cxx_array
-# Alias: cxx_array::cxx_array
+# Target: array
+# Alias: collections::array
 # Type: Interface Library
-# Dependencies: cxx_array::cxx_array_headers
+# Dependencies: collections::array_headers
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library(cxx_array INTERFACE)
+add_library(array INTERFACE)
 
 # Target alias
-add_library(cxx_array::cxx_array ALIAS cxx_array)
+add_library(collections::array ALIAS array)
 
 # Target dependencies
-target_link_libraries(cxx_array
+target_link_libraries(array
     INTERFACE
-        cxx_array::cxx_array_headers
+        collections::array_headers
 )
 
 # Target properties
-set_target_properties(cxx_array PROPERTIES
-        OUTPUT_NAME cxx_array
+set_target_properties(array PROPERTIES
+        OUTPUT_NAME array
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
         CXX_VISIBILITY_PRESET hidden
@@ -105,12 +105,12 @@ set_target_properties(cxx_array PROPERTIES
 )
 
 if(NOT CMAKE_SKIP_INSTALL_RULES)
-    # Install cxx_array
-    install(TARGETS cxx_array
-            RUNTIME COMPONENT cxx_array
-            LIBRARY COMPONENT cxx_array
-            NAMELINK_COMPONENT cxx_array
-            ARCHIVE COMPONENT cxx_array
+    # Install array
+    install(TARGETS array
+            RUNTIME COMPONENT array
+            LIBRARY COMPONENT array
+            NAMELINK_COMPONENT array
+            ARCHIVE COMPONENT array
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
