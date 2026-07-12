@@ -101,7 +101,7 @@ namespace collections {
 
         public:
             // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────
-            inline constexpr iterator() noexcept;
+            inline constexpr iterator() noexcept : ptr_(nullptr) {}
 
             inline constexpr iterator(const iterator& other) noexcept;
 
