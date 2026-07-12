@@ -105,7 +105,7 @@ namespace collections {
 
             inline constexpr iterator(const iterator& other) noexcept : ptr_(other.ptr_) {}
 
-            inline constexpr iterator(iterator&& other) noexcept;
+            inline constexpr iterator(iterator&& other) noexcept : ptr_(other.ptr_) { other.ptr_ = nullptr; }
 
             // ── Destructor ───────────────────────────────────────────────────────────────────────────────────────────
             inline constexpr ~iterator() noexcept = default;
