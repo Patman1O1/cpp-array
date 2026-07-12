@@ -151,18 +151,25 @@ namespace collections {
                 return ++this->ptr_;
             }
 
-            inline constexpr iterator operator++(int) noexcept {
+            inline constexpr iterator operator++(int) /* throws std::system_error */ {
                 iterator temp = *this;
                 ++*this;
                 return temp;
             }
 
-            inline constexpr iterator& operator--() noexcept {
-
+            inline constexpr iterator& operator--() /* throws std::system_error */ {
+                if (this->ptr_ == nullptr) {
+                    throw std::system_error(
+                        std::errc::bad_address(), std::format("Cannot access memory at address {}", this->ptr_)
+                        );
+                }
+                return --this->ptr_;
             }
 
-            inline constexpr iterator operator--(int) noexcept {
-
+            inline constexpr iterator operator--(int) /* throws std::system_error */ {
+                iterator temp = *this;
+                --*this;
+                return temp;
             }
 
             inline constexpr iterator& operator+=(const difference_type n) noexcept {
