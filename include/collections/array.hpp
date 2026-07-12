@@ -36,9 +36,11 @@ namespace collections {
         value_type values_[N];
 
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
-        inline constexpr void _trivial_copy(const T* values, const std::size_t size) {
+        inline constexpr void _trivial_copy(const T* values, const std::size_t size) /* throws std::length_error */ {
             if (size > N) {
-                throw std::length_error(std::format("\"size\", which is {} exceeds the size of this array, which is {}", size, N));
+                throw std::length_error(std::format(
+                    "\"size\", which is {}, exceeds the size of this array, which is {}", size, N
+                    ));
             }
 
             // Copy the values using memcpy (overflow is impossible at this point)
@@ -49,6 +51,25 @@ namespace collections {
             }
         }
 
+        inline constexpr void _copy(const T* values, const std::size_t size) {
+            if (size > N) {
+                throw std::length_error(std::format(
+                    "\"size\", which is {}, exceeds the size of this array, which is {}", size, N
+                    ));
+            }
+
+            // Copy the values iteratively (overflow is impossible at this point)
+            for (std::size_t i = 0; i < size; i++) {
+                this->values_[i] = values[i];
+            }
+
+            // Fill the remaining part of the array with the default value of T
+            if (size < N) {
+                for (std::size_t i = size; i < N; i++) {
+                    this->values_[i] = T();
+                }
+            }
+        }
     public:
         // ── iterator ─────────────────────────────────────────────────────────────────────────────────────────────────
         class iterator {
