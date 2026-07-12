@@ -7,6 +7,7 @@
 
 // ISO C++ Includes
 #include <algorithm>
+#include <format>
 #include <initializer_list>
 #include <type_traits>
 #include <stdexcept>
@@ -33,6 +34,20 @@ namespace collections {
     private:
         // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────────
         value_type values_[N];
+
+        // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
+        inline constexpr void _trivial_copy(const T* values, const std::size_t size) {
+            if (size > N) {
+                throw std::length_error(std::format("\"size\", which is {} exceeds the size of this array, which is {}", size, N));
+            }
+
+            // Copy the values using memcpy (overflow is impossible at this point)
+            std::memcpy(this->values_, values, N * sizeof(T));
+
+            if (size < N) {
+                std::memset(this->values_ + size, 0x00, (N - size) * sizeof(T));
+            }
+        }
 
     public:
         // ── iterator ─────────────────────────────────────────────────────────────────────────────────────────────────
