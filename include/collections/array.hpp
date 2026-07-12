@@ -142,8 +142,12 @@ namespace collections {
                 return this->ptr_ <=> lhs.ptr_;
             }
 
-            inline constexpr iterator& operator++() noexcept {
-
+            inline constexpr iterator& operator++() /* throws std::system_error */ {
+                if (this->ptr_ == nullptr) {
+                    throw std::system_error(
+                        std::errc::bad_address(), std::format("Cannot access memory at address {}", this->ptr_)
+                        );
+                }
             }
 
             inline constexpr iterator operator++(int) noexcept {
