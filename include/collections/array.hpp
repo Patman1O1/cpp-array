@@ -51,7 +51,7 @@ namespace collections {
             }
         }
 
-        inline constexpr void _copy(const T* values, const std::size_t size) {
+        inline constexpr void _copy(const T* values, const std::size_t size) /* throws std::length_error */ {
             if (size > N) {
                 throw std::length_error(std::format(
                     "\"size\", which is {}, exceeds the size of this array, which is {}", size, N
@@ -70,6 +70,7 @@ namespace collections {
                 }
             }
         }
+
     public:
         // ── iterator ─────────────────────────────────────────────────────────────────────────────────────────────────
         class iterator {
