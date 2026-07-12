@@ -148,9 +148,11 @@ namespace collections {
                         std::errc::bad_address(), std::format("Cannot access memory at address {}", this->ptr_)
                         );
                 }
+                return this->ptr_++;
             }
 
             inline constexpr iterator operator++(int) noexcept {
+                pointer temp = this->ptr_;
 
             }
 
