@@ -135,11 +135,11 @@ namespace collections {
             }
 
             [[nodiscard]] inline constexpr bool operator==(const iterator& lhs) const noexcept {
-
+                return this->ptr_ == lhs.ptr_;
             }
 
             [[nodiscard]] inline constexpr auto operator<=>(const iterator& lhs) const noexcept {
-
+                return this->ptr_ <=> lhs.ptr_;
             }
 
             inline constexpr iterator& operator++() noexcept {
