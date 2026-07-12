@@ -112,11 +112,26 @@ namespace collections {
 
             // ── Overload Operators ───────────────────────────────────────────────────────────────────────────────────
             inline constexpr iterator& operator=(const iterator& lhs) noexcept {
+                // Protect against self assignment
+                if (this == &lhs) {
+                    return *this;
+                }
 
+                this->ptr_ = lhs.ptr_;
+
+                return *this;
             }
 
             inline constexpr iterator& operator=(iterator&& lhs) noexcept {
+                // Move nothing if the source and the destination are the same
+                if (this == &lhs) {
+                    return *this;
+                }
 
+                this->ptr_ = lhs.ptr_;
+                lhs.ptr_ = nullptr;
+
+                return *this;
             }
 
             [[nodiscard]] inline constexpr bool operator==(const iterator& lhs) const noexcept {
