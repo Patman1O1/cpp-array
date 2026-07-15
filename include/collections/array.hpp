@@ -155,13 +155,9 @@ namespace collections {
             return const_reverse_iterator<iterator>(this->rend());
         }
 
-        [[nodiscard]] inline constexpr bool empty() const {
+        [[nodiscard]] inline constexpr bool empty() const noexcept { return N == 0; }
 
-        }
-
-        [[nodiscard]] inline constexpr size_type size() const {
-
-        }
+        [[nodiscard]] inline constexpr size_type size() const noexcept { return N; }
 
         [[nodiscard]] inline constexpr size_type max_size() const {
 
