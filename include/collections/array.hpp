@@ -105,9 +105,9 @@ namespace collections {
             return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<value_type>, std::error_code> at_noexcept(const size_type index) noexcept {
+        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<value_type>, array_error> at_noexcept(const size_type index) noexcept {
             if (index >= N) [[unlikely]] {
-                return std::unexpected(std::make_error_code(std::errc::value_too_large));
+                return std::unexpected(array_error::out_of_range);
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
