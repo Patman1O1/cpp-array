@@ -87,7 +87,15 @@ namespace collections {
         // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────────
         inline constexpr array() noexcept = default;
 
-        inline constexpr array(const array& other) noexcept {}
+        inline constexpr array(const array& other) noexcept {
+            if constexpr (std::is_copy_constructible_v<value_type>) {
+                std::memcpy(this->values_, other.values_, N * sizeof(value_type));
+            } else {
+                for (std::size_t i = 0; i < N; i++) {
+                    this->values_[i] = other.values_[i];
+                }
+            }
+        }
 
         inline constexpr array(array&& other) noexcept {}
 
