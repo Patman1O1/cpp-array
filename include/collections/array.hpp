@@ -133,18 +133,18 @@ namespace collections {
 
         [[nodiscard]] inline constexpr iterator begin() noexcept { return this->values_; }
 
-        [[nodiscard]] inline constexpr iterator end() noexcept { return nullptr; }
+        [[nodiscard]] inline constexpr iterator end() noexcept { return this->values_ + N; }
 
         [[nodiscard]] inline constexpr const_iterator cbegin() const {
-
+            return this->values_;
         }
 
         [[nodiscard]] inline constexpr const_iterator cend() const {
-
+            return this->values_ + N;
         }
 
         [[nodiscard]] inline constexpr reverse_iterator rbegin() {
-
+            return
         }
 
         [[nodiscard]] inline constexpr reverse_iterator rend() {
