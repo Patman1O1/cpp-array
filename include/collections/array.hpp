@@ -117,8 +117,8 @@ namespace collections {
             return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr const_reference operator[](const size_type index) const {
-
+        [[nodiscard]] inline constexpr const_reference operator[](const size_type index) const noexcept {
+            return this->values_[index];
         }
 
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
