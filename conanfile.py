@@ -23,6 +23,8 @@ class Array(ConanFile):
         self.tool_requires("cmake/[>=4.3.0]")
         if bool(self.options.build_tests) or self.settings.build_type == "Debug":
             self.test_requires("gtest/1.14.0")
+            self.test_requires("benchmark/[>=1.9.5]")
+
 
     def layout(self) -> None:
         cmake_layout(self)
