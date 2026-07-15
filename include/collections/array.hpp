@@ -129,9 +129,7 @@ namespace collections {
 
         [[nodiscard]] inline constexpr pointer data() noexcept { return this->values_; }
 
-        [[nodiscard]] inline constexpr const_pointer data() const noexcept {
-
-        }
+        [[nodiscard]] inline constexpr const_pointer data() const noexcept { return this->values_; }
 
         [[nodiscard]] inline constexpr iterator begin() {
 
