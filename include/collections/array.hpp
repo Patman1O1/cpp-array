@@ -161,13 +161,9 @@ namespace collections {
 
         [[nodiscard]] inline constexpr size_type max_size() const noexcept { return N; }
 
-        inline constexpr void fill(const_reference value) noexcept {
+        inline constexpr void fill(const_reference value) noexcept { return std::fill(value); }
 
-        }
-
-        inline constexpr void swap(array& other) noexcept {
-
-        }
+        inline constexpr void swap(array& other) noexcept { std::swap(this->values_, other.values_); }
     };
 
 } // namespace collections
