@@ -159,9 +159,7 @@ namespace collections {
 
         [[nodiscard]] inline constexpr size_type size() const noexcept { return N; }
 
-        [[nodiscard]] inline constexpr size_type max_size() const {
-
-        }
+        [[nodiscard]] inline constexpr size_type max_size() const { return N; }
 
         inline constexpr void fill(const_reference value) noexcept {}
 
