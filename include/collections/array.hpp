@@ -48,6 +48,11 @@ namespace collections {
 
 
     public:
+        // ── array_error ──────────────────────────────────────────────────────────────────────────────────────────────
+        enum class array_error : std::uint8_t {
+            out_of_range,
+        };
+
         // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────────
         inline constexpr array() noexcept = default;
 
@@ -98,6 +103,13 @@ namespace collections {
                 throw std::out_of_range("collections::array::at index out of range");
             }
             return this->values_[index];
+        }
+
+        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<value_type>, std::error_code> at_noexcept(const size_type index) noexcept {
+            if (index >= N) [[unlikely]] {
+                return std::unexpected(std::make_error_code(std::errc::value_too_large));
+            }
+            return std::reference_wrapper<value_type>(this->values_[index]);
         }
 
         [[nodiscard]] inline constexpr reference front() {
