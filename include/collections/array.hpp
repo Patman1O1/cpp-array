@@ -107,9 +107,7 @@ namespace collections {
         // ── Overloaded Operators ─────────────────────────────────────────────────────────────────────────────────────
         inline constexpr array& operator=(const array& lhs) noexcept = default;
 
-        inline constexpr array& operator=(array&& lhs) noexcept {
-
-        }
+        inline constexpr array& operator=(array&& lhs) noexcept = default;
 
         [[nodiscard]] constexpr bool operator==(const array& lhs) const noexcept {
 
