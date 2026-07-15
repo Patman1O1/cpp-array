@@ -97,9 +97,17 @@ namespace collections {
             }
         }
 
-        inline constexpr array(array&& other) noexcept : values_(std::move(other.values_)) {}
+        inline constexpr array(array&& other) noexcept = default;
 
-        inline constexpr array(std::initializer_list<value_type> values) noexcept {}
+        inline constexpr array(std::initializer_list<value_type> values) noexcept {
+            if constexpr (std::is_trivially_copyable_v<value_type>) {
+                std::memcpy(this->values_, values.data(), N * sizeof(value_type));
+            } else {
+                for (std::size_t i = 0; i < N; i++) {
+                    this->values_[i] = values[i];
+                }
+            }
+        }
 
         // ── Destructor ───────────────────────────────────────────────────────────────────────────────────────────────
         inline constexpr ~array() noexcept = default;
