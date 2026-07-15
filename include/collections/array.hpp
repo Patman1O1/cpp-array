@@ -109,13 +109,9 @@ namespace collections {
 
         inline constexpr array& operator=(array&& lhs) noexcept = default;
 
-        [[nodiscard]] constexpr bool operator==(const array& lhs) const noexcept {
+        [[nodiscard]] constexpr bool operator==(const array& lhs) const noexcept = default;
 
-        }
-
-        [[nodiscard]] constexpr auto operator<=>(const array& lhs) const noexcept {
-
-        }
+        [[nodiscard]] constexpr auto operator<=>(const array& lhs) const noexcept = default;
 
         [[nodiscard]] inline constexpr reference operator[](const size_type index) {
 
