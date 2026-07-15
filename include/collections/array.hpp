@@ -128,7 +128,7 @@ namespace collections {
         }
 
         [[nodiscard]] inline constexpr const_reference back() const noexcept {
-
+            return this->values_[this->size() - 1];
         }
 
         [[nodiscard]] inline constexpr pointer data() noexcept {
