@@ -113,8 +113,8 @@ namespace collections {
 
         [[nodiscard]] constexpr auto operator<=>(const array& lhs) const noexcept = default;
 
-        [[nodiscard]] inline constexpr reference operator[](const size_type index) {
-
+        [[nodiscard]] inline constexpr reference operator[](const size_type index) noexcept {
+            return this->values_[index];
         }
 
         [[nodiscard]] inline constexpr const_reference operator[](const size_type index) const {
