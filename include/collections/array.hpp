@@ -123,13 +123,9 @@ namespace collections {
 
         [[nodiscard]] inline constexpr const_reference front() const { return this->values_[0]; }
 
-        [[nodiscard]] inline constexpr reference back() noexcept {
-            return this->values_[this->size() - 1];
-        }
+        [[nodiscard]] inline constexpr reference back() noexcept { return this->values_[this->size() - 1]; }
 
-        [[nodiscard]] inline constexpr const_reference back() const noexcept {
-            return this->values_[this->size() - 1];
-        }
+        [[nodiscard]] inline constexpr const_reference back() const noexcept { return this->values_[this->size() - 1]; }
 
         [[nodiscard]] inline constexpr pointer data() noexcept {
 
