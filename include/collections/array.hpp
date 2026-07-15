@@ -135,23 +135,23 @@ namespace collections {
 
         [[nodiscard]] inline constexpr iterator end() noexcept { return this->values_ + N; }
 
-        [[nodiscard]] inline constexpr const_iterator cbegin() const { return this->values_; }
+        [[nodiscard]] inline constexpr const_iterator cbegin() const noexcept { return this->values_; }
 
-        [[nodiscard]] inline constexpr const_iterator cend() const { return this->values_ + N; }
+        [[nodiscard]] inline constexpr const_iterator cend() const noexcept { return this->values_ + N; }
 
-        [[nodiscard]] inline constexpr reverse_iterator rbegin() {
+        [[nodiscard]] inline constexpr reverse_iterator rbegin() noexcept {
             return reverse_iterator<iterator>(this->begin());
         }
 
-        [[nodiscard]] inline constexpr reverse_iterator rend() {
+        [[nodiscard]] inline constexpr reverse_iterator rend() noexcept {
             return reverse_iterator<iterator>(this->end());
         }
 
-        [[nodiscard]] inline constexpr const_reverse_iterator crbegin() const {
+        [[nodiscard]] inline constexpr const_reverse_iterator crbegin() const noexcept {
             return const_reverse_iterator<iterator>(this->rbegin());
         }
 
-        [[nodiscard]] inline constexpr const_reverse_iterator crend() const {
+        [[nodiscard]] inline constexpr const_reverse_iterator crend() const noexcept {
             return const_reverse_iterator<iterator>(this->rend());
         }
 
