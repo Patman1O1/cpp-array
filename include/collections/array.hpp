@@ -7,6 +7,7 @@
 
 // ISO C++ Includes
 #include <algorithm>
+#include <expected>
 #include <format>
 #include <initializer_list>
 #include <type_traits>
@@ -31,16 +32,23 @@ namespace collections {
 
         using const_reference = const T&;
 
+    	using iterator = pointer;
+
+    	using const_iterator = const_pointer;
+
+    	using reverse_iterator = std::reverse_iterator<iterator>;
+
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
     private:
         // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────────
         value_type values_[N];
 
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
-        inline constexpr void _trivial_copy(const T* values, const std::size_t size) /* throws std::length_error */ {
+        inline constexpr std::expected<void, std::error_code> _trivial_copy(const T* values,
+                                                                            const std::size_t size) noexcept {
             if (size > N) {
-                throw std::length_error(std::format(
-                    "\"size\", which is {}, exceeds the size of this array, which is {}", size, N
-                    ));
+                return std::unexpected<std::error_code>{std::make_error_code(std::errc::value_too_large)};
             }
 
             // Copy the values using memcpy (overflow is impossible at this point)
@@ -49,13 +57,15 @@ namespace collections {
             if (size < N) {
                 std::memset(this->values_ + size, 0x00, (N - size) * sizeof(T));
             }
+
+            return std::expected<void, std::error_code>{};
         }
 
-        inline constexpr void _copy(const T* values, const std::size_t size) /* throws std::length_error */ {
+        inline constexpr std::expected<void, std::error_code> _copy(const T* values, const std::size_t size) noexcept {
             if (size > N) {
-                throw std::length_error(std::format(
-                    "\"size\", which is {}, exceeds the size of this array, which is {}", size, N
-                    ));
+                const std::error_code err = std::make_error_code(std::errc::value_too_large);
+                std::println(std::cerr, "_copy: {}", err.message());
+                return std::unexpected<std::error_code>{err};
             }
 
             // Copy the values iteratively (overflow is impossible at this point)
@@ -69,221 +79,19 @@ namespace collections {
                     this->values_[i] = T();
                 }
             }
+
+            return std::expected<void, std::error_code>{};
         }
 
     public:
-        // ── iterator ─────────────────────────────────────────────────────────────────────────────────────────────────
-        class iterator {
-        public:
-            // ── Type Definitions ─────────────────────────────────────────────────────────────────────────────────────
-            using iterator_category = std::contiguous_iterator_tag;
-
-            using value_type = array::value_type;
-
-            using size_type = array::size_type;
-
-            using difference_type = array::difference_type;
-
-            using pointer = array::pointer;
-
-            using const_pointer = array::const_pointer;
-
-            using reference = array::reference;
-
-            using const_reference = array::const_reference;
-
-        private:
-            // ── Friends ──────────────────────────────────────────────────────────────────────────────────────────────
-            friend class array;
-
-            // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────
-            pointer ptr_;
-
-        public:
-            // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────
-            inline constexpr iterator() noexcept : ptr_(nullptr) {}
-
-            inline constexpr iterator(const iterator& other) noexcept : ptr_(other.ptr_) {}
-
-            inline constexpr iterator(iterator&& other) noexcept : ptr_(other.ptr_) { other.ptr_ = nullptr; }
-
-            // ── Destructor ───────────────────────────────────────────────────────────────────────────────────────────
-            inline constexpr ~iterator() noexcept = default;
-
-            // ── Overload Operators ───────────────────────────────────────────────────────────────────────────────────
-            inline constexpr iterator& operator=(const iterator& lhs) noexcept {
-                // Protect against self assignment
-                if (this == &lhs) {
-                    return *this;
-                }
-
-                this->ptr_ = lhs.ptr_;
-
-                return *this;
-            }
-
-            inline constexpr iterator& operator=(iterator&& lhs) noexcept {
-                // Move nothing if the source and the destination are the same
-                if (this == &lhs) {
-                    return *this;
-                }
-
-                this->ptr_ = lhs.ptr_;
-                lhs.ptr_ = nullptr;
-
-                return *this;
-            }
-
-            [[nodiscard]] inline constexpr bool operator==(const iterator& lhs) const noexcept {
-                return this->ptr_ == lhs.ptr_;
-            }
-
-            [[nodiscard]] inline constexpr auto operator<=>(const iterator& lhs) const noexcept {
-                return this->ptr_ <=> lhs.ptr_;
-            }
-
-            inline constexpr iterator& operator++() /* throws std::system_error */ {
-                if (this->ptr_ == nullptr) {
-                    throw std::system_error(
-                        std::errc::bad_address(), std::format("Cannot access memory at address {}", this->ptr_)
-                        );
-                }
-                return ++this->ptr_;
-            }
-
-            inline constexpr iterator operator++(int) /* throws std::system_error */ {
-                iterator temp = *this;
-                ++*this;
-                return temp;
-            }
-
-            inline constexpr iterator& operator--() /* throws std::system_error */ {
-                if (this->ptr_ == nullptr) {
-                    throw std::system_error(
-                        std::errc::bad_address(), std::format("Cannot access memory at address {}", this->ptr_)
-                        );
-                }
-                return --this->ptr_;
-            }
-
-            inline constexpr iterator operator--(int) /* throws std::system_error */ {
-                iterator temp = *this;
-                --*this;
-                return temp;
-            }
-
-            inline constexpr iterator& operator+=(const difference_type n) noexcept {
-
-            }
-
-            [[nodiscard]] inline constexpr iterator operator+(const difference_type n) const noexcept {
-
-            }
-
-            inline constexpr iterator& operator-=(const difference_type n) noexcept {
-
-            }
-
-            [[nodiscard]] inline constexpr iterator operator-(const difference_type n) const noexcept {
-
-            }
-        };
-
-        // ── const_iterator ───────────────────────────────────────────────────────────────────────────────────────────
-        class const_iterator {
-        public:
-            // ── Type Definitions ─────────────────────────────────────────────────────────────────────────────────────
-            using iterator_category = std::contiguous_iterator_tag;
-
-            using value_type = array::value_type;
-
-            using size_type = array::size_type;
-
-            using difference_type = array::difference_type;
-
-            using pointer = array::pointer;
-
-            using const_pointer = array::const_pointer;
-
-            using reference = array::reference;
-
-            using const_reference = array::const_reference;
-
-        private:
-            // ── Friends ──────────────────────────────────────────────────────────────────────────────────────────────
-            friend class array;
-
-            // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────
-            pointer ptr_;
-
-            // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────
-            constexpr const_iterator() noexcept : ptr_(nullptr) {}
-        };
-
-        // ── reverse_iterator ─────────────────────────────────────────────────────────────────────────────────────────
-        class reverse_iterator {
-        public:
-            // ── Type Definitions ─────────────────────────────────────────────────────────────────────────────────────
-            using iterator_category = std::contiguous_iterator_tag;
-
-            using value_type = array::value_type;
-
-            using size_type = array::size_type;
-
-            using difference_type = array::difference_type;
-
-            using pointer = array::pointer;
-
-            using const_pointer = array::const_pointer;
-
-            using reference = array::reference;
-
-            using const_reference = array::const_reference;
-
-        private:
-            // ── Friends ──────────────────────────────────────────────────────────────────────────────────────────────
-            friend class array;
-
-            // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────
-            pointer ptr_;
-        };
-
-        // ── const_reverse_iterator ───────────────────────────────────────────────────────────────────────────────────
-        class const_reverse_iterator {
-        public:
-            // ── Type Definitions ─────────────────────────────────────────────────────────────────────────────────────
-            using iterator_category = std::contiguous_iterator_tag;
-
-            using value_type = array::value_type;
-
-            using size_type = array::size_type;
-
-            using difference_type = array::difference_type;
-
-            using pointer = array::pointer;
-
-            using const_pointer = array::const_pointer;
-
-            using reference = array::reference;
-
-            using const_reference = array::const_reference;
-
-        private:
-            // ── Friends ──────────────────────────────────────────────────────────────────────────────────────────────
-            friend class array;
-
-            // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────
-            pointer ptr_;
-        };
-
         // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────────
         inline constexpr array() noexcept = default;
 
-        inline constexpr array(const array& other) noexcept;
+        inline constexpr array(const array& other) noexcept {}
 
-        inline constexpr array(array&& other) noexcept;
+        inline constexpr array(array&& other) noexcept {}
 
-        inline constexpr array(std::initializer_list<value_type> values) noexcept;
+        inline constexpr array(std::initializer_list<value_type> values) noexcept {}
 
         // ── Destructor ───────────────────────────────────────────────────────────────────────────────────────────────
         inline constexpr ~array() noexcept = default;
