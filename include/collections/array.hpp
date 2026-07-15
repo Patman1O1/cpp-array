@@ -131,13 +131,9 @@ namespace collections {
 
         [[nodiscard]] inline constexpr const_pointer data() const noexcept { return this->values_; }
 
-        [[nodiscard]] inline constexpr iterator begin() {
+        [[nodiscard]] inline constexpr iterator begin() noexcept { return this->values_; }
 
-        }
-
-        [[nodiscard]] inline constexpr iterator end() {
-
-        }
+        [[nodiscard]] inline constexpr iterator end() noexcept { return nullptr; }
 
         [[nodiscard]] inline constexpr const_iterator cbegin() const {
 
