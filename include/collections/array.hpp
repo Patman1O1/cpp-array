@@ -97,7 +97,7 @@ namespace collections {
             }
         }
 
-        inline constexpr array(array&& other) noexcept {}
+        inline constexpr array(array&& other) noexcept : values_(std::move(other.values_)) {}
 
         inline constexpr array(std::initializer_list<value_type> values) noexcept {}
 
