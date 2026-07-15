@@ -119,7 +119,7 @@ namespace collections {
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
 
-        [[nodiscard]] inline constexpr reference front() noexcept { }
+        [[nodiscard]] inline constexpr reference front() noexcept { return this->values_[0]; }
 
         [[nodiscard]] inline constexpr const_reference front() const {
 
