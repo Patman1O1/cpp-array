@@ -45,43 +45,7 @@ namespace collections {
         value_type values_[N];
 
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
-        inline constexpr std::expected<void, std::error_code> _trivial_copy(const T* values,
-                                                                            const std::size_t size) noexcept {
-            if (size > N) {
-                return std::unexpected<std::error_code>{std::make_error_code(std::errc::value_too_large)};
-            }
 
-            // Copy the values using memcpy (overflow is impossible at this point)
-            std::memcpy(this->values_, values, N * sizeof(T));
-
-            if (size < N) {
-                std::memset(this->values_ + size, 0x00, (N - size) * sizeof(T));
-            }
-
-            return std::expected<void, std::error_code>{};
-        }
-
-        inline constexpr std::expected<void, std::error_code> _copy(const T* values, const std::size_t size) noexcept {
-            if (size > N) {
-                const std::error_code err = std::make_error_code(std::errc::value_too_large);
-                std::println(std::cerr, "_copy: {}", err.message());
-                return std::unexpected<std::error_code>{err};
-            }
-
-            // Copy the values iteratively (overflow is impossible at this point)
-            for (std::size_t i = 0; i < size; i++) {
-                this->values_[i] = values[i];
-            }
-
-            // Fill the remaining part of the array with the default value of T
-            if (size < N) {
-                for (std::size_t i = size; i < N; i++) {
-                    this->values_[i] = T();
-                }
-            }
-
-            return std::expected<void, std::error_code>{};
-        }
 
     public:
         // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -122,12 +86,18 @@ namespace collections {
         }
 
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
-        [[nodiscard]] inline constexpr reference at(const size_type index) {
-
+        [[nodiscard]] inline constexpr reference at(const size_type index) /* throws std::out_of_range */ {
+            if (index >= N) [[unlikely]] {
+                throw std::out_of_range("collections::array::at index out of range");
+            }
+            return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr const_reference at(const size_type index) const {
-
+        [[nodiscard]] inline constexpr const_reference at(const size_type index) const /* throws std::out_of_range */ {
+            if (index >= N) [[unlikely]] {
+                throw std::out_of_range("collections::array::at index out of range");
+            }
+            return this->values_[index];
         }
 
         [[nodiscard]] inline constexpr reference front() {
