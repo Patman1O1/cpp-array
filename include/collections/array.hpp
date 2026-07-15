@@ -121,9 +121,7 @@ namespace collections {
 
         [[nodiscard]] inline constexpr reference front() noexcept { return this->values_[0]; }
 
-        [[nodiscard]] inline constexpr const_reference front() const {
-
-        }
+        [[nodiscard]] inline constexpr const_reference front() const { return this->values_[0]; }
 
         [[nodiscard]] inline constexpr reference back() noexcept {
 
