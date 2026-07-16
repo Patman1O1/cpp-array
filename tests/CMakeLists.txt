@@ -28,6 +28,7 @@ target_link_libraries(array_test
         collections::array_headers
         GTest::gtest_main
         GTest::gmock_main
+        benchmark::benchmark_main
 )
 
 # Test discovery
