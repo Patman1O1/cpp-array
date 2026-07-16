@@ -46,6 +46,7 @@ endif()
 #-----------------------------------------------------------------------------------------------------------------------
 if(BUILD_TESTS)
     find_package(GTest REQUIRED)
+    find_package(benchmark REQUIRED)
 endif()
 
 include(GNUInstallDirs)
