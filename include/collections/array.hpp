@@ -44,9 +44,6 @@ namespace collections {
         // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────────
         value_type values_[N];
 
-        // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
-
-
     public:
         // ── array_error ──────────────────────────────────────────────────────────────────────────────────────────────
         enum class array_error : std::uint8_t {
@@ -60,15 +57,13 @@ namespace collections {
 
         inline constexpr array(array&& other) noexcept = default;
 
-        inline constexpr array(std::initializer_list<value_type> values) noexcept {
-            if constexpr (std::is_trivially_copyable_v<value_type>) {
-                std::memcpy(this->values_, values.data(), N * sizeof(value_type));
-            } else {
-                for (std::size_t i = 0; i < N; i++) {
-                    this->values_[i] = values[i];
-                }
-            }
-        }
+        template <typename... Args>
+        requires (sizeof...(Args) <= N)
+              && (std::constructible_from<value_type, Args> && ...)
+              && (sizeof...(Args) != 1 || !(std::same_as<std::remove_cvref_t<Args>, array> || ...))
+        inline constexpr explicit(!(std::convertible_to<Args, value_type> && ...)) array(Args&&... args)
+            noexcept((std::is_nothrow_constructible_v<value_type, Args> && ...))
+                : values_{static_cast<value_type>(std::forward<Args>(args))...} {}
 
         // ── Destructor ───────────────────────────────────────────────────────────────────────────────────────────────
         inline constexpr ~array() noexcept = default;
