@@ -8,15 +8,12 @@
 // ISO C++ Includes
 #include <algorithm>
 #include <expected>
-#include <format>
-#include <initializer_list>
-#include <type_traits>
 #include <stdexcept>
+#include <type_traits>
 
 namespace collections {
     template<typename T, std::size_t N>
-    class array {
-    public:
+    struct array {
         // ── Type Definitions ─────────────────────────────────────────────────────────────────────────────────────────
         using value_type = T;
 
@@ -40,134 +37,120 @@ namespace collections {
 
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    private:
         // ── Fields ───────────────────────────────────────────────────────────────────────────────────────────────────
         value_type values_[N];
 
-    public:
         // ── array_error ──────────────────────────────────────────────────────────────────────────────────────────────
         enum class array_error : std::uint8_t {
             out_of_range,
         };
 
         // ── Constructors ─────────────────────────────────────────────────────────────────────────────────────────────
-        inline constexpr array() noexcept = default;
-
-        inline constexpr array(const array& other) noexcept = default;
-
-        inline constexpr array(array&& other) noexcept = default;
-
-        template <typename... Args>
-        requires (sizeof...(Args) <= N)
-              && (std::constructible_from<value_type, Args> && ...)
-              && (sizeof...(Args) != 1 || !(std::same_as<std::remove_cvref_t<Args>, array> || ...))
-        inline constexpr explicit(!(std::convertible_to<Args, value_type> && ...)) array(Args&&... args)
-            noexcept((std::is_nothrow_constructible_v<value_type, Args> && ...))
-                : values_{static_cast<value_type>(std::forward<Args>(args))...} {}
 
         // ── Destructor ───────────────────────────────────────────────────────────────────────────────────────────────
-        inline constexpr ~array() noexcept = default;
 
         // ── Overloaded Operators ─────────────────────────────────────────────────────────────────────────────────────
-        inline constexpr array& operator=(const array& lhs) noexcept = default;
+        [[nodiscard]] constexpr auto operator==(const array&) const -> bool = default;
 
-        inline constexpr array& operator=(array&& lhs) noexcept = default;
+        [[nodiscard]] constexpr auto operator<=>(const array&) const = default;
 
-        [[nodiscard]] inline constexpr bool operator==(const array& lhs) const noexcept = default;
-
-        [[nodiscard]] inline constexpr auto operator<=>(const array& lhs) const noexcept = default;
-
-        [[nodiscard]] inline constexpr reference operator[](const size_type index) noexcept {
+        [[nodiscard]] constexpr auto operator[](const size_type index) noexcept -> reference {
             return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr const_reference operator[](const size_type index) const noexcept {
+        [[nodiscard]] constexpr auto operator[](const size_type index) const noexcept -> const_reference {
             return this->values_[index];
         }
 
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────────────────────
-        [[nodiscard]] inline constexpr reference at(const size_type index) /* throws std::out_of_range */ {
+        [[nodiscard]] constexpr auto at(const size_type index) -> reference /* throws std::out_of_range */ {
             if (index >= N) [[unlikely]] {
                 throw std::out_of_range("collections::array::at index out of range");
             }
             return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr const_reference at(const size_type index) const /* throws std::out_of_range */ {
+        [[nodiscard]] constexpr auto at(const size_type index) const -> const_reference /* throws std::out_of_range */ {
             if (index >= N) [[unlikely]] {
                 throw std::out_of_range("collections::array::at index out of range");
             }
             return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<value_type>, array_error> at_noexcept(
-                const size_type index
-            ) noexcept {
+        [[nodiscard]] constexpr auto at_noexcept(const size_type index) noexcept -> std::expected<std::reference_wrapper<value_type>, array_error> {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
 
-        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<const value_type>, array_error> at_noexcept(
-                const size_type index
-            ) const noexcept {
+        [[nodiscard]] constexpr auto at_noexcept(const size_type index) const noexcept -> std::expected<std::reference_wrapper<const value_type>, array_error> {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
             return std::reference_wrapper<const value_type>(this->values_[index]);
         }
 
-        [[nodiscard]] inline constexpr reference front() noexcept { return this->values_[0]; }
+        [[nodiscard]] constexpr auto front() noexcept -> reference { return this->values_[0]; }
 
-        [[nodiscard]] inline constexpr const_reference front() const noexcept { return this->values_[0]; }
+        [[nodiscard]] constexpr auto front() const noexcept -> const_reference { return this->values_[0]; }
 
-        [[nodiscard]] inline constexpr reference back() noexcept { return this->values_[this->size() - 1]; }
+        [[nodiscard]] constexpr auto back() noexcept -> reference { return this->values_[this->size() - 1]; }
 
-        [[nodiscard]] inline constexpr const_reference back() const noexcept { return this->values_[this->size() - 1]; }
+        [[nodiscard]] constexpr auto back() const noexcept -> const_reference { return this->values_[this->size() - 1]; }
 
-        [[nodiscard]] inline constexpr pointer data() noexcept { return this->values_; }
+        [[nodiscard]] constexpr auto data() noexcept -> pointer { return this->values_; }
 
-        [[nodiscard]] inline constexpr const_pointer data() const noexcept { return this->values_; }
+        [[nodiscard]] constexpr auto data() const noexcept -> const_pointer { return this->values_; }
 
-        [[nodiscard]] inline constexpr iterator begin() noexcept { return this->values_; }
+        [[nodiscard]] constexpr auto begin() noexcept -> iterator { return this->values_; }
 
-        [[nodiscard]] inline constexpr iterator end() noexcept { return this->values_ + N; }
+        [[nodiscard]] constexpr auto end() noexcept -> iterator { return this->values_ + N; }
 
-        [[nodiscard]] inline constexpr const_iterator cbegin() const noexcept { return this->values_; }
+        [[nodiscard]] constexpr auto begin() const noexcept -> const_iterator { return this->values_; }
 
-        [[nodiscard]] inline constexpr const_iterator cend() const noexcept { return this->values_ + N; }
+        [[nodiscard]] constexpr auto end() const noexcept -> const_iterator { return this->values_ + N; }
 
-        [[nodiscard]] inline constexpr reverse_iterator rbegin() noexcept {
-            return reverse_iterator(this->begin());
+        [[nodiscard]] constexpr auto cbegin() const noexcept -> const_iterator { return this->values_; }
+
+        [[nodiscard]] constexpr auto cend() const noexcept -> const_iterator { return this->values_ + N; }
+
+        [[nodiscard]] constexpr auto rbegin() noexcept -> reverse_iterator { return reverse_iterator(this->end()); }
+
+        [[nodiscard]] constexpr auto rend() noexcept -> reverse_iterator { return reverse_iterator(this->begin()); }
+
+        [[nodiscard]] constexpr auto rbegin() const noexcept -> const_reverse_iterator {
+            return const_reverse_iterator(this->end());
         }
 
-        [[nodiscard]] inline constexpr reverse_iterator rend() noexcept {
-            return reverse_iterator(this->end());
+        [[nodiscard]] constexpr auto rend() const noexcept -> const_reverse_iterator {
+            return const_reverse_iterator(this->begin());
         }
 
-        [[nodiscard]] inline constexpr const_reverse_iterator crbegin() const noexcept {
-            return const_reverse_iterator(this->rbegin());
+        [[nodiscard]] constexpr auto crbegin() const noexcept -> const_reverse_iterator { return this->rbegin(); }
+
+        [[nodiscard]] constexpr auto crend() const noexcept -> const_reverse_iterator { return this->rend(); }
+
+        [[nodiscard]] constexpr auto empty() const noexcept -> bool { return N == 0; }
+
+        [[nodiscard]] constexpr auto size() const noexcept -> size_type { return N; }
+
+        [[nodiscard]] constexpr auto max_size() const noexcept -> size_type { return N; }
+
+        constexpr void fill(const_reference value) noexcept(std::is_nothrow_copy_assignable_v<value_type>) {
+            std::fill(this->begin(), this->end(), value);
         }
-
-        [[nodiscard]] inline constexpr const_reverse_iterator crend() const noexcept {
-            return const_reverse_iterator(this->rend());
+        constexpr void swap(array& other) noexcept(std::is_nothrow_swappable_v<value_type>) {
+            std::swap(this->values_, other.values_);
         }
+        constexpr void sort() noexcept {}
 
-        [[nodiscard]] inline constexpr bool empty() const noexcept { return N == 0; }
-
-        [[nodiscard]] inline constexpr size_type size() const noexcept { return N; }
-
-        [[nodiscard]] inline constexpr size_type max_size() const noexcept { return N; }
-
-        inline constexpr void fill(const_reference value) noexcept { return std::fill(value); }
-
-        inline constexpr void swap(array& other) noexcept { std::swap(this->values_, other.values_); }
-
-        inline constexpr void sort() noexcept {}
-
-        inline constexpr void stable_sort() noexcept {}
+        constexpr void stable_sort() noexcept {}
     };
+
+    // ── Deduction Guides ─────────────────────────────────────────────────────────────────────────────────────────────
+    template <typename T, typename... U> requires (std::same_as<T, U> && ...)
+    array(T, U...) -> array<T, 1 + sizeof...(U)>;
 
 } // namespace collections
 
