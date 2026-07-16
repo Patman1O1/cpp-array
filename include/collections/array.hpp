@@ -140,19 +140,19 @@ namespace collections {
         [[nodiscard]] inline constexpr const_iterator cend() const noexcept { return this->values_ + N; }
 
         [[nodiscard]] inline constexpr reverse_iterator rbegin() noexcept {
-            return reverse_iterator<iterator>(this->begin());
+            return reverse_iterator(this->begin());
         }
 
         [[nodiscard]] inline constexpr reverse_iterator rend() noexcept {
-            return reverse_iterator<iterator>(this->end());
+            return reverse_iterator(this->end());
         }
 
         [[nodiscard]] inline constexpr const_reverse_iterator crbegin() const noexcept {
-            return const_reverse_iterator<iterator>(this->rbegin());
+            return const_reverse_iterator(this->rbegin());
         }
 
         [[nodiscard]] inline constexpr const_reverse_iterator crend() const noexcept {
-            return const_reverse_iterator<iterator>(this->rend());
+            return const_reverse_iterator(this->rend());
         }
 
         [[nodiscard]] inline constexpr bool empty() const noexcept { return N == 0; }
@@ -164,6 +164,10 @@ namespace collections {
         inline constexpr void fill(const_reference value) noexcept { return std::fill(value); }
 
         inline constexpr void swap(array& other) noexcept { std::swap(this->values_, other.values_); }
+
+        inline constexpr void sort() noexcept {}
+
+        inline constexpr void stable_sort() noexcept {}
     };
 
 } // namespace collections
