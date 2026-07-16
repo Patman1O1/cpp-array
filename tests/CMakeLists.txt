@@ -57,3 +57,20 @@ target_link_libraries(array_benchmark
         benchmark::benchmark_main
 )
 
+#-----------------------------------------------------------------------------------------------------------------------
+# Target: diff
+# Alias: collections::diff
+# Type: Executable
+#-----------------------------------------------------------------------------------------------------------------------
+# Target definition
+add_executable(diff)
+
+# Target alias
+add_executable(collections::diff ALIAS diff)
+
+# Target sources
+target_sources(diff
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/diff.cpp
+)
+
