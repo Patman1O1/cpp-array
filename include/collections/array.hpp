@@ -115,12 +115,12 @@ namespace collections {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
-            return std::reference_wrapper<value_type>(this->values_[index]);
+            return std::reference_wrapper<const value_type>(this->values_[index]);
         }
 
         [[nodiscard]] inline constexpr reference front() noexcept { return this->values_[0]; }
 
-        [[nodiscard]] inline constexpr const_reference front() const { return this->values_[0]; }
+        [[nodiscard]] inline constexpr const_reference front() const noexcept { return this->values_[0]; }
 
         [[nodiscard]] inline constexpr reference back() noexcept { return this->values_[this->size() - 1]; }
 
