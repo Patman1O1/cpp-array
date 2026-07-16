@@ -50,4 +50,71 @@ namespace collections::array_testing {
         static_assert(3 == array[2]);
     }
 
+    // ── Method Tests ─────────────────────────────────────────────────────────────────────────────────────────────────
+    TEST(array_methods, at_mut_overload_does_not_throw) {
+        // TODO
+
+    }
+
+    TEST(array_methods, at_mut_overload_throws) {
+        // TODO
+
+    }
+
+    TEST(array_methods, at_const_overload_does_not_throw) {
+        // TODO
+    }
+
+    TEST(array_methods, at_const_overload_throws) {
+        // TODO
+    }
+
+    TEST(array_methods, at_noexcept_mut_overload_expected_return_value) {
+        // TODO
+    }
+
+    TEST(array_methods, at_noexcept_mut_overload_unexpected_return_value) {
+        // TODO
+    }
+
+    TEST(array_methods, at_noexcept_const_overload_expected_return_value) {
+        // TODO
+    }
+
+    TEST(array_methods, at_noexcept_const_overload_unexpected_return_value) {
+        // TODO
+    }
+
+    TEST(array_methods, front_mut_overload_single_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, front_mut_overload_multi_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, front_const_overload_single_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, front_const_overload_multi_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, back_mut_overload_single_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, back_mut_overload_multi_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, back_const_overload_single_element_array) {
+        // TODO
+    }
+
+    TEST(array_methods, back_const_overload_multi_element_array) {
+        // TODO
+    }
+
 } // namespace collections::array_testing
