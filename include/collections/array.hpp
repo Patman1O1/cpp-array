@@ -73,9 +73,9 @@ namespace collections {
 
         inline constexpr array& operator=(array&& lhs) noexcept = default;
 
-        [[nodiscard]] constexpr bool operator==(const array& lhs) const noexcept = default;
+        [[nodiscard]] inline constexpr bool operator==(const array& lhs) const noexcept = default;
 
-        [[nodiscard]] constexpr auto operator<=>(const array& lhs) const noexcept = default;
+        [[nodiscard]] inline constexpr auto operator<=>(const array& lhs) const noexcept = default;
 
         [[nodiscard]] inline constexpr reference operator[](const size_type index) noexcept {
             return this->values_[index];
@@ -100,14 +100,18 @@ namespace collections {
             return this->values_[index];
         }
 
-        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<value_type>, array_error> at_noexcept(const size_type index) noexcept {
+        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<value_type>, array_error> at_noexcept(
+                const size_type index
+            ) noexcept {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
 
-        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<const value_type>, array_error> at_noexcept(const size_type index) const noexcept {
+        [[nodiscard]] inline constexpr std::expected<std::reference_wrapper<const value_type>, array_error> at_noexcept(
+                const size_type index
+            ) const noexcept {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
