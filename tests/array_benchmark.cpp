@@ -8,7 +8,7 @@
 #include <collections/array.hpp>
 
 namespace collections::array_benchmarks {
-    static void collections_array_variadic_constructor(benchmark::State& state) {
+    static void collections_array_aggregate_init(benchmark::State& state) {
         // Outside the loop: defeats constant-folding of the inputs without
         // forcing a reload every iteration.
         int x = 1;
@@ -19,12 +19,12 @@ namespace collections::array_benchmarks {
         benchmark::DoNotOptimize(z);
 
         for (auto _ : state) {
-            array<int, 3> values = {x, y, z};
+            array values = {x, y, z};
             benchmark::DoNotOptimize(values);
             benchmark::ClobberMemory();
         }
     }
-    BENCHMARK(collections_array_variadic_constructor);
+    BENCHMARK(collections_array_aggregate_init);
 
     static void std_array_aggregate_init(benchmark::State& state) {
         int x = 1;
