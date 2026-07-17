@@ -12,17 +12,20 @@ class Array(ConanFile):
     exports_sources = ("CMakeLists.txt", "cmake/*", "include/*", "tests/*")
 
     options = {
-        "build_tests": [True, False]
+        "build_tests": [True, False],
+        "build_benchmarks": [True, False]
     }
 
     default_options = {
-        "build_tests": False
+        "build_tests": False,
+        "build_benchmarks": False
     }
 
     def build_requirements(self) -> None:
         self.tool_requires("cmake/[>=4.3.0]")
         if bool(self.options.build_tests) or self.settings.build_type == "Debug":
-            self.test_requires("gtest/1.14.0")
+            self.test_requires("gtest/1.17.0")
+        elif self.options.build_benchmarks:
             self.test_requires("benchmark/[>=1.9.5]")
 
 
@@ -35,6 +38,7 @@ class Array(ConanFile):
             toolchain.variables["BUILD_TESTS"] = True
         else:
             toolchain.variables["BUILD_TESTS"] = bool(self.options.build_tests)
+        toolchain.variables["BUILD_BENCHMARKS"] = bool(self.options.build_benchmarks)
         toolchain.generate()
         CMakeDeps(self).generate()
 
