@@ -34,6 +34,7 @@ if(PROJECT_IS_TOP_LEVEL)
 
     # Project Options
     option(BUILD_TESTS "Build the project's test suite" OFF)
+    option(BUILD_BENCHMARKS "Build the project benchmarks" OFF)
 
     # Set default build type if not specified
     if(NOT DEFINED CMAKE_BUILD_TYPE AND NOT DEFINED CMAKE_CONFIGURATION_TYPES)
