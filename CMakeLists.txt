@@ -51,7 +51,7 @@ if(BUILD_TESTS)
 endif()
 
 if(BUILD_BENCHMARKS)
-    find_package(benchmarks REQUIRED)
+    find_package(benchmark REQUIRED)
 endif()
 
 include(GNUInstallDirs)
