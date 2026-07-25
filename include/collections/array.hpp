@@ -13,7 +13,8 @@
 #include <expected>
 #include <functional>
 #include <iterator>
-#include <memory>
+#include <memory
+#include <new>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -34,20 +35,20 @@ namespace collections {
     template<typename T, std::size_t N>
     class array {
     public:
-        // ── Aliases ─────────────────────────────────────────────────────────────────────────────
+        // ── Aliases ───────────────────────────────────────────────────────────────────────────────────
         using value_type = T;
 
         using size_type = std::size_t;
 
         using difference_type = std::ptrdiff_t;
 
-        using pointer = T*;
+        using pointer = value_type*;
 
-        using const_pointer = const T*;
+        using const_pointer = const value_type*;
 
-        using reference = T&;
+        using reference = value_type&;
 
-        using const_reference = const T&;
+        using const_reference = const value_type&;
 
         using iterator = pointer;
 
@@ -58,12 +59,13 @@ namespace collections {
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     private:
-        // ── network_entry ───────────────────────────────────────────────────────────────────────
+        // ── struct network_entry ────────────────────────────────────────────────────────────────
         struct network_entry {
             size_type size = 0;
             size_type depth = 0;
             std::pair<std::uint8_t, std::uint8_t> pairs[200];
         };
+
 
         // ── Fields ──────────────────────────────────────────────────────────────────────────────
         inline static constexpr size_type max_network_size = 32;
@@ -2641,7 +2643,14 @@ namespace collections {
 
         inline static constexpr size_type pseudo_median_rec_threshold = 64;
 
-        inline static constexpr size_type network_base_threshold = COLLECTIONS_ARRAY_NETWORK_BASE_THRESHOLD;
+        inline static constexpr size_type
+            network_base_threshold = COLLECTIONS_ARRAY_NETWORK_BASE_THRESHOLD;
+
+        inline static constexpr size_type stable_insertion_threshold = 64;
+
+        inline static constexpr size_type stable_stack_budget = 8192;
+
+        inline static constexpr size_type min_gallop = 12;
 
         // ── Methods ─────────────────────────────────────────────────────────────────────────────
         template<typename Compare>
@@ -2649,12 +2658,10 @@ namespace collections {
         [[gnu::always_inline]] static constexpr void compare_exchange(pointer vals,
                                                                       const size_type idx0,
                                                                       const size_type idx1,
-                                                                      Compare& comp) {
+                                                                      Compare& cmp) {
             const value_type x = vals[idx0];
             const value_type y = vals[idx1];
-
-            const bool result = comp(y, x);
-
+            const bool result = cmp(y, x);
             vals[idx0] = result ? y : x;
             vals[idx1] = result ? x : y;
         }
@@ -2662,11 +2669,11 @@ namespace collections {
         template<size_type K, typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference> &&
                      (K <= max_network_size)
-        [[gnu::always_inline]] static constexpr void network_sort(pointer start,
-                                                                  Compare& comp) {
+        [[gnu::always_inline]] static constexpr void network_sort(pointer start, Compare& comp) {
             [&]<size_type... I>(std::index_sequence<I...>) -> void {
-                (compare_exchange(start, network_table[K].pairs[I].first,
-                                         network_table[K].pairs[I].second, comp), ...);
+                (compare_exchange(start,
+                                  network_table[K].pairs[I].first,
+                                  network_table[K].pairs[I].second, comp), ...);
             }(std::make_index_sequence<network_table[K].size>{});
         }
 
@@ -2674,24 +2681,28 @@ namespace collections {
             requires std::strict_weak_order<Compare, const_reference, const_reference> &&
                      (K <= max_network_size)
         static constexpr void network_sort_adaptive(pointer v, Compare& comp) {
-            if constexpr (K >= 2) {
-                bool ascending = true;
-                bool descending = true;
-
-                for (size_type i = 1; i < K; i++) {
-                    ascending &= !comp(v[i], v[i - 1]);
-                    descending &= comp(v[i], v[i - 1]);
-                }
-
-                if (ascending) {
-                    return;
-                }
-
-                if (descending) {
-                    std::reverse(v, v + K);
-                    return;
-                }
+            if constexpr (K < 2) {
+                network_sort<K>(v, comp);
+                return;
             }
+
+            bool ascending = true;
+            bool descending = true;
+
+            for (size_type i = 1; i < K; i++) {
+                ascending &= !comp(v[i], v[i - 1]);
+                descending &= comp(v[i], v[i - 1]);
+            }
+
+            if (ascending) {
+                return;
+            }
+
+            if (descending) {
+                std::reverse(v, v + K);
+                return;
+            }
+
             network_sort<K>(v, comp);
         }
 
@@ -2699,6 +2710,7 @@ namespace collections {
             requires std::strict_weak_order<Compare, const_reference, const_reference>
         static constexpr void insert_tail(pointer begin, pointer tail, Compare& comp) {
             pointer sift = tail - 1;
+
             if (!comp(*tail, *sift)) {
                 return;
             }
@@ -2715,7 +2727,6 @@ namespace collections {
                 }
 
                 --sift;
-
                 if (!comp(tmp, *sift)) {
                     break;
                 }
@@ -2735,7 +2746,7 @@ namespace collections {
 
             value_type* const v_end = v + len;
 
-            for (pointer tail = v + offset; tail != v_end; ++tail) {
+            for (pointer tail = v + offset; tail != v_end; tail++) {
                 insert_tail(v, tail, comp);
             }
         }
@@ -2752,9 +2763,13 @@ namespace collections {
             size_type run_len = 2;
             const bool strictly_descending = comp(v[1], v[0]);
             if (strictly_descending) {
-                while (run_len < len && comp(v[run_len], v[run_len - 1])) { ++run_len; }
+                while (run_len < len && comp(v[run_len], v[run_len - 1])) {
+                    ++run_len;
+                }
             } else {
-                while (run_len < len && !comp(v[run_len], v[run_len - 1])) { ++run_len; }
+                while (run_len < len && !comp(v[run_len], v[run_len - 1])) {
+                    ++run_len;
+                }
             }
             return {run_len, strictly_descending};
         }
@@ -2767,6 +2782,7 @@ namespace collections {
                                         Compare& comp) {
             while (true) {
                 size_type child = 2 * node + 1;
+
                 if (child >= len) {
                     break;
                 }
@@ -2795,7 +2811,8 @@ namespace collections {
                 if (i >= len) {
                     sift_idx = i - len;
                 } else {
-                    std::swap(v[0], v[i]); sift_idx = 0;
+                    std::swap(v[0], v[i]);
+                    sift_idx = 0;
                 }
 
                 sift_down(v, i < len ? i : len, sift_idx, comp);
@@ -2832,6 +2849,7 @@ namespace collections {
                 b = median3_rec(b, b + n8 * 4, b + n8 * 7, n8, comp);
                 c = median3_rec(c, c + n8 * 4, c + n8 * 7, n8, comp);
             }
+
             return median3(a, b, c, comp);
         }
 
@@ -2865,15 +2883,16 @@ namespace collections {
             const value_type pivot_val = *pivot;
             alignas(value_type) unsigned char gap_storage[sizeof(value_type)];
             pointer const gap_value = std::launder(reinterpret_cast<pointer>(gap_storage));
-
             std::memcpy(static_cast<void*>(gap_storage),
                         static_cast<const void*>(v_base),
                         sizeof(value_type));
-
+            // Plain locals replace the former state_t + raw_gap_guard: `gap_pos` is the current hole, `right`
+            // scans, `num_lt` counts. NOTE: dropping raw_gap_guard also drops its exception-safety net -- if
+            // `comp` throws mid-partition the array is left mid-permutation. Fine for noexcept comparators
+            // (std::less et al.); if you need the strong guarantee back, reinstate an RAII guard.
             pointer gap_pos = v_base;
             pointer right = v_base + 1;
             size_type num_lt = 0;
-
             const auto loop_body = [&] [[gnu::always_inline]] () -> void {
                 const bool right_is_lt = comp(*right, pivot_val);
                 pointer const left = v_base + num_lt;
@@ -2896,22 +2915,24 @@ namespace collections {
 
             while (right < unroll_end) {
                 loop_body();
-                if constexpr (unroll_len == 2) { loop_body(); }
+                if constexpr (unroll_len == 2) {
+                    loop_body();
+                }
             }
 
             pointer const end = v_base + len;
-
             while (true) {
                 const bool is_done = right == end;
                 if (is_done) {
                     right = gap_value;
                 }
+
                 loop_body();
+
                 if (is_done) {
                     break;
                 }
             }
-
             return num_lt;
         }
 
@@ -2933,15 +2954,15 @@ namespace collections {
             std::uint64_t lbits = 0;
             std::uint64_t rbits = 0;
 
-            while (lm1 - first >= static_cast<difference_type>(2 * block - 1)) {
+            while (lm1 - first >= static_cast<std::ptrdiff_t>(2 * block - 1)) {
                 if (lbits == 0) {
-                    for (size_type j = 0; j < block; j++) {
+                    for (size_type j = 0; j < block; ++j) {
                         lbits |= static_cast<std::uint64_t>(!comp(first[j], pivot)) << j;
                     }
                 }
 
                 if (rbits == 0) {
-                    for (size_type j = 0; j < block; j++) {
+                    for (size_type j = 0; j < block; ++j) {
                         rbits |= static_cast<std::uint64_t>(comp(*(lm1 - j), pivot)) << j;
                     }
                 }
@@ -2975,7 +2996,6 @@ namespace collections {
                     lbits |= static_cast<std::uint64_t>(!comp(first[j], pivot)) << j;
                 }
             }
-
             if (rbits == 0) {
                 for (size_type j = 0; j < r_size; j++) {
                     rbits |= static_cast<std::uint64_t>(comp(*(lm1 - j), pivot)) << j;
@@ -2985,28 +3005,28 @@ namespace collections {
             while ((lbits != 0) & (rbits != 0)) {
                 const int tl = std::countr_zero(lbits); lbits &= lbits - 1;
                 const int tr = std::countr_zero(rbits); rbits &= rbits - 1;
-
                 std::swap(first[tl], *(lm1 - tr));
             }
 
             first += lbits == 0 ? l_size : 0;
             lm1 -= rbits == 0 ? r_size : 0;
-
             if (lbits != 0) {
                 while (lbits != 0) {
                     const int tl = 63 - std::countl_zero(lbits);
                     lbits &= (static_cast<std::uint64_t>(1) << tl) - 1;
-                    std::swap(first[tl], *lm1); --lm1;
+                    std::swap(first[tl], *lm1);
+                    --lm1;
                 }
-
                 first = lm1 + 1;
             } else if (rbits != 0) {
                 while (rbits != 0) {
                     const int tr = 63 - std::countl_zero(rbits);
                     rbits &= (static_cast<std::uint64_t>(1) << tr) - 1;
-                    std::swap(*(lm1 - tr), *first); ++first;
+                    std::swap(*(lm1 - tr), *first);
+                    ++first;
                 }
             }
+
             return static_cast<size_type>(first - v);
         }
 
@@ -3023,7 +3043,9 @@ namespace collections {
             pointer const v_base = v;
             pointer left = v_base;
             pointer right = v_base + len;
+
             alignas(value_type) unsigned char tmp_storage[sizeof(value_type)];
+
             pointer tmp = nullptr;
             pointer gap_pos = nullptr;
 
@@ -3041,8 +3063,7 @@ namespace collections {
                 }
 
                 if (tmp == nullptr) {
-                    tmp = std::construct_at(reinterpret_cast<pointer>(tmp_storage),
-                                            std::move(*left));
+                    tmp = std::construct_at(reinterpret_cast<pointer>(tmp_storage), std::move(*left));
                 } else {
                     *gap_pos = std::move(*left);
                 }
@@ -3051,7 +3072,10 @@ namespace collections {
                 *left = std::move(*right);
                 ++left;
             }
-
+            // Former restore_t destructor, now explicit: close the rotation by dropping the saved element into
+            // the final hole and destroying the temporary. (This was normal control flow, not just cleanup.)
+            // NOTE: as with the Lomuto path, doing this manually rather than via RAII means a throwing `comp`
+            // no longer restores the temporary -- acceptable for noexcept comparators.
             if (tmp != nullptr) {
                 *gap_pos = std::move(*tmp);
                 std::destroy_at(tmp);
@@ -3089,9 +3113,8 @@ namespace collections {
 
         static consteval auto small_sort_threshold() -> size_type {
             if constexpr (std::is_trivially_copyable_v<value_type> &&
-                         sizeof(value_type) <= 16 &&
-                         alignof(value_type) <=
-                         alignof(std::max_align_t)) {
+                          sizeof(value_type) <= 16 &&
+                          alignof(value_type) <= alignof(std::max_align_t)) {
                 return network_base_threshold > 20 ? network_base_threshold : 20;
             }
             return 20;
@@ -3116,16 +3139,16 @@ namespace collections {
             }
 
             if constexpr (std::is_trivially_copyable_v<value_type> &&
-                         sizeof(value_type) <= 16 &&
-                         alignof(value_type) <= alignof(std::max_align_t) &&
-                         network_base_threshold >= 2) {
+                          sizeof(value_type) <= 16 &&
+                          alignof(value_type) <= alignof(std::max_align_t) &&
+                          network_base_threshold >= 2) {
                 if (len <= network_base_threshold) {
-                    small_sort_network_dispatch(v,
-                                                len,
-                                                comp,
-                                                std::make_index_sequence<
-                                                    network_base_threshold + 1
-                                                >{});
+                    small_sort_network_dispatch(
+                        v,
+                        len,
+                        comp,
+                        std::make_index_sequence<network_base_threshold + 1>{}
+                    );
                     return;
                 }
             }
@@ -3137,8 +3160,7 @@ namespace collections {
         static void quicksort(pointer v,
                               size_type len,
                               const_pointer ancestor_pivot,
-                              std::uint32_t limit,
-                              Compare& comp) {
+                              std::uint32_t limit, Compare& comp) {
             while (true) {
                 if (len <= small_sort_threshold()) {
                     small_sort(v, len, comp);
@@ -3156,16 +3178,15 @@ namespace collections {
                     auto not_greater = [&](const_reference a, const_reference b) {
                         return !comp(b, a);
                     };
-
                     const size_type num_lt = partition(v, len, pivot_pos, not_greater);
                     v += num_lt + 1;
                     len -= num_lt + 1;
                     ancestor_pivot = nullptr;
                     continue;
                 }
+
                 const size_type num_lt = partition(v, len, pivot_pos, comp);
                 quicksort(v, num_lt, ancestor_pivot, limit, comp);
-
                 const_pointer const pivot = v + num_lt;
                 v += num_lt + 1;
                 len -= num_lt + 1;
@@ -3193,9 +3214,207 @@ namespace collections {
                 }
                 return;
             }
-
             const auto limit = static_cast<std::uint32_t>(2 * std::bit_width(len | 1) - 2);
             quicksort(v, len, static_cast<const_pointer>(nullptr), limit, comp);
+        }
+
+        template<typename Compare>
+            requires std::strict_weak_order<Compare, const_reference, const_reference>
+        static constexpr void stable_small_sort(pointer first, const size_type n, Compare& comp) {
+            if (n < 2) [[unlikely]] {
+                return;
+            }
+
+            const auto [run_len, descending] = find_existing_run(first, n, comp);
+            if (descending) {
+                std::reverse(first, first + run_len);
+            }
+            insertion_sort(first, n, run_len, comp);
+        }
+
+
+        // Smallest index in [lo, hi) of `arr` at which `pred(arr[idx])` becomes false, assuming pred is
+        // monotone (true...false). Used to gallop to a run boundary. O(log) via exponential + binary search.
+        template<typename Pred> requires std::predicate<Pred>
+        static size_type gallop_boundary(pointer arr,
+                                         const size_type lo,
+                                         const size_type hi,
+                                         Pred pred) {
+            size_type ofs = 1;
+            size_type last = lo;
+
+            while (lo + ofs < hi && pred(arr[lo + ofs])) {
+                last = lo + ofs;
+                ofs = ofs * 2 + 1;
+            }
+
+            size_type a = last;
+            size_type b = lo + ofs < hi ? lo + ofs : hi;
+
+            while (a < b) {
+                size_type m = a + (b - a) / 2;
+                if (pred(arr[m])) {
+                    a = m + 1;
+                } else {
+                    b = m;
+                }
+            }
+            return a;
+        }
+
+        // Stable galloping merge of [first, mid) and [mid, last). The left run is moved into `buffer`; the right
+        // run stays in place. Ties take from the left (stability). When either side wins `min_gallop` comparisons
+        // in a row, switch to galloping: binary-search the other side for the crossover and block-move in bulk --
+        // this is what keeps merge competitive on random data and fast on structured data. buffer cap >= mid-first.
+        template<typename Compare>
+            requires std::strict_weak_order<Compare, const_reference, const_reference>
+        static void merge_runs(pointer first,
+                               pointer mid,
+                               pointer last,
+                               pointer buffer,
+                               Compare& comp) {
+            const auto n1 = static_cast<size_type>(mid - first);
+            const auto n2 = static_cast<size_type>(last - mid);
+
+            for (size_type i = 0; i < n1; ++i) {
+                std::construct_at(buffer + i, std::move(first[i]));
+            }
+
+            size_type i = 0; // index into buffer (left)
+            size_type j = 0; // index into [mid, last) (right)
+            pointer k = first; // output cursor
+            pointer const rt = mid; // right base
+            size_type gallop = min_gallop;
+
+            while (i < n1 && j < n2) {
+                size_type left_wins = 0;
+                size_type right_wins = 0;
+
+                while (i < n1 && j < n2) {
+                    if (comp(rt[j], buffer[i])) {
+                        *k++ = std::move(rt[j]);
+                        ++j;
+                        ++right_wins;
+                        left_wins = 0;
+
+                        if (right_wins >= gallop) {
+                            break;
+                        }
+                    } else {
+                        *k++ = std::move(buffer[i]);
+                        ++i;
+                        ++left_wins;
+                        right_wins = 0;
+
+                        if (left_wins >= gallop) {
+                            break;
+                        }
+                    }
+                }
+
+                if (i >= n1 || j >= n2) {
+                    break;
+                }
+
+                ++gallop;
+
+                do {
+                    if (gallop > 0) {
+                        --gallop;
+                    }
+
+                    const value_type& rkey = rt[j];
+                    left_wins = gallop_boundary(buffer, i, n1, [&](const value_type& x) {
+                        return !comp(rkey, x);
+                    }) - i;
+
+                    for (size_type t = 0; t < left_wins; t++) {
+                        *k++ = std::move(buffer[i++]);
+                    }
+
+                    if (i >= n1) {
+                        break;
+                    }
+
+                    const value_type& lkey = buffer[i];
+                    right_wins = gallop_boundary(
+                        const_cast<pointer>(rt),
+                        j,
+                        n2,
+                        [&](const value_type& x) {
+                            return comp(x, lkey);
+                        }
+                    ) - j;
+
+                    for (size_type t = 0; t < right_wins; t++) {
+                        *k++ = std::move(rt[j++]);
+                    }
+
+                    if (j >= n2) {
+                        break;
+                    }
+                } while (left_wins >= min_gallop || right_wins >= min_gallop);
+                gallop += 2; // penalize re-entering gallop too eagerly
+            }
+            while (i < n1) {
+                *k++ = std::move(buffer[i++]);
+            } // left remainder; right remainder already in place
+            std::destroy_n(buffer, n1);
+        }
+
+        // Recursive top-down merge sort. Balanced halving keeps the largest buffered left run at N/2.
+        template<typename Compare>
+            requires std::strict_weak_order<Compare, const_reference, const_reference>
+        static void merge_sort(pointer first, pointer last, pointer buffer, Compare& comp) {
+            const auto n = static_cast<size_type>(last - first);
+
+            if (n <= stable_insertion_threshold) {
+                stable_small_sort(first, n, comp);
+                return;
+            }
+
+            pointer const mid = first + n / 2;
+            merge_sort(first, mid, buffer, comp);
+            merge_sort(mid, last, buffer, comp);
+
+            if (!comp(*mid, *(mid - 1))) {
+                return;
+            } // halves already ordered across the split -> skip the merge
+            merge_runs(first, mid, last, buffer, comp);
+        }
+
+        // Allocates the scratch (stack when it fits, else one aligned heap block) and runs the merge sort.
+        template<typename Compare>
+            requires std::strict_weak_order<Compare, const_reference, const_reference>
+        static void stable_sort_run(pointer v, const size_type n, Compare& comp) {
+            if (n <= stable_insertion_threshold) {
+                stable_small_sort(v, n, comp);
+                return;
+            }
+
+            constexpr size_type buf_n = N / 2 + 1;
+            constexpr size_type buf_bytes = buf_n * sizeof(value_type);
+
+            if constexpr (buf_bytes <= stable_stack_budget) {
+                alignas(value_type) std::byte storage[buf_bytes];
+                merge_sort(v, v + n, reinterpret_cast<pointer>(storage), comp);
+            } else {
+                auto const buffer = static_cast<pointer>(
+                    ::operator new(buf_bytes, std::align_val_t{alignof(value_type)})
+                );
+
+                try {
+                    merge_sort(v, v + n, buffer, comp);
+                } catch (...) {
+                    ::operator delete(static_cast<void*>(buffer),
+                                      buf_bytes,
+                                      std::align_val_t{alignof(value_type)});
+                    throw;
+                }
+                ::operator delete(static_cast<void*>(buffer),
+                                  buf_bytes,
+                                  std::align_val_t{alignof(value_type)});
+            }
         }
 
     public:
@@ -3219,7 +3438,6 @@ namespace collections {
             return this->values_[index];
         }
 
-        // ── Methods ─────────────────────────────────────────────────────────────────────────────
         [[nodiscard]] constexpr auto at(const size_type index) -> reference {
             if (index >= N) [[unlikely]] {
                 throw std::out_of_range("collections::array::at index out of range");
@@ -3233,7 +3451,6 @@ namespace collections {
             }
             return this->values_[index];
         }
-
         [[nodiscard]] constexpr auto at_noexcept(const size_type index) noexcept
             -> std::expected<std::reference_wrapper<value_type>, array_error> {
             if (index >= N) [[unlikely]] {
@@ -3241,6 +3458,7 @@ namespace collections {
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
+
         [[nodiscard]] constexpr auto at_noexcept(const size_type index) const noexcept
             -> std::expected<std::reference_wrapper<const value_type>, array_error> {
             if (index >= N) [[unlikely]] {
@@ -3313,17 +3531,11 @@ namespace collections {
             return this->rend();
         }
 
-        [[nodiscard]] constexpr auto empty() const noexcept -> bool {
-            return N == 0;
-        }
+        [[nodiscard]] constexpr auto empty() const noexcept -> bool { return N == 0; }
 
-        [[nodiscard]] constexpr auto size() const noexcept -> size_type {
-            return N;
-        }
+        [[nodiscard]] constexpr auto size() const noexcept -> size_type { return N; }
 
-        [[nodiscard]] constexpr auto max_size() const noexcept -> size_type {
-            return N;
-        }
+        [[nodiscard]] constexpr auto max_size() const noexcept -> size_type { return N; }
 
         constexpr void fill(const_reference value)
             noexcept(std::is_nothrow_copy_assignable_v<value_type>) {
@@ -3337,8 +3549,8 @@ namespace collections {
 
         template<std::contiguous_iterator Iterator, typename Compare>
             requires std::strict_weak_order<Compare,
-                                            std::iter_value_t<Iterator>,
-                                            std::iter_value_t<Iterator>>
+                     std::iter_value_t<Iterator>,
+                     std::iter_value_t<Iterator>>
         constexpr void sort(Iterator first, Iterator last, Compare comp) {
             if constexpr (N <= 1) {
                 return;
@@ -3374,9 +3586,9 @@ namespace collections {
                 insertion_sort(std::to_address(first), dist, dist == 0 ? 0 : 1, comp);
             } else {
                 if constexpr (N <= max_network_size &&
-                              std::is_trivially_copyable_v<value_type> &&
-                              sizeof(value_type) <= 16 &&
-                              alignof(value_type) <= alignof(std::max_align_t)) {
+                             std::is_trivially_copyable_v<value_type> &&
+                             sizeof(value_type) <= 16 &&
+                             alignof(value_type) <= alignof(std::max_align_t)) {
                     network_sort_adaptive<N>(std::to_address(first), comp);
                 } else {
                     ipnsort(std::to_address(first), static_cast<size_type>(last - first), comp);
@@ -3404,15 +3616,46 @@ namespace collections {
             }
         }
 
+        // Stable sort of the whole array.
         template<typename Compare = std::less<value_type>>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
         constexpr void stable_sort(Compare comp = Compare{}) {
-            if constexpr (N <= 2) {
+            if constexpr (N <= 1) {
                 return;
             }
 
             if consteval {
+                stable_small_sort(this->values_, N, comp);
+            } else {
+                stable_sort_run(this->values_, N, comp);
+            }
+        }
 
+        template<std::contiguous_iterator Iterator, typename Compare>
+            requires std::strict_weak_order<Compare,
+                                            std::iter_value_t<Iterator>,
+                                            std::iter_value_t<Iterator>>
+        constexpr void stable_sort(Iterator first, Iterator last, Compare comp) {
+            const auto n = static_cast<size_type>(last - first);
+            if consteval {
+                stable_small_sort(std::to_address(first), n, comp);
+            } else {
+                stable_sort_run(std::to_address(first), n, comp);
+            }
+        }
+
+        template<std::contiguous_iterator Iterator>
+            requires std::strict_weak_order<std::less<value_type>,
+                                            std::iter_value_t<Iterator>,
+                                            std::iter_value_t<Iterator>>
+        constexpr void stable_sort(Iterator first, Iterator last) {
+            std::less<value_type> comp{};
+            const auto n = static_cast<size_type>(last - first);
+
+            if consteval {
+                stable_small_sort(std::to_address(first), n, comp);
+            } else {
+                stable_sort_run(std::to_address(first), n, comp);
             }
         }
     };
