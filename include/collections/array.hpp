@@ -2660,7 +2660,8 @@ namespace collections {
         }
 
         template<size_type K, typename Compare>
-            requires std::strict_weak_order<Compare, const_reference, const_reference> && (K <= max_network_size)
+            requires std::strict_weak_order<Compare, const_reference, const_reference> &&
+                     (K <= max_network_size)
         [[gnu::always_inline]] static constexpr void network_sort(pointer start,
                                                                   Compare& comp) {
             [&]<size_type... I>(std::index_sequence<I...>) -> void {
@@ -2724,7 +2725,10 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr void insertion_sort(pointer v, const size_type len, const size_type offset, Compare& comp) {
+        static constexpr void insertion_sort(pointer v,
+                                             const size_type len,
+                                             const size_type offset,
+                                             Compare& comp) {
             if (offset == 0 || offset > len) {
                 return;
             }
@@ -2757,7 +2761,10 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr void sift_down(pointer v, const size_type len, size_type node, Compare& comp) {
+        static constexpr void sift_down(pointer v,
+                                        const size_type len,
+                                        size_type node,
+                                        Compare& comp) {
             while (true) {
                 size_type child = 2 * node + 1;
                 if (child >= len) {
@@ -2779,7 +2786,9 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        [[gnu::noinline]] static constexpr void heapsort(pointer v, const size_type len, Compare& comp) {
+        [[gnu::noinline]] static constexpr void heapsort(pointer v,
+                                                         const size_type len,
+                                                         Compare& comp) {
             for (size_type i = len + len / 2; i-- > 0;) {
                 size_type sift_idx;
 
@@ -2812,7 +2821,11 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr auto median3_rec(const_pointer a, const_pointer b, const_pointer c, const size_type n, Compare& comp) -> const_pointer {
+        static constexpr auto median3_rec(const_pointer a,
+                                          const_pointer b,
+                                          const_pointer c,
+                                          const size_type n,
+                                          Compare& comp) -> const_pointer {
             if (n * 8 >= pseudo_median_rec_threshold) {
                 const size_type n8 = n / 8;
                 a = median3_rec(a, a + n8 * 4, a + n8 * 7, n8, comp);
@@ -2824,19 +2837,26 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr auto choose_pivot(pointer v, const size_type len, Compare& comp) -> size_type {
+        static constexpr auto choose_pivot(pointer v,
+                                           const size_type len,
+                                           Compare& comp) -> size_type {
             const size_type len_div_8 = len / 8;
             const_pointer const a = v;
             const_pointer const b = v + len_div_8 * 4;
             const_pointer const c = v + len_div_8 * 7;
-            const_pointer const m = len < pseudo_median_rec_threshold ? median3(a, b, c, comp)
-                                                                      : median3_rec(a, b, c, len_div_8, comp);
+            const_pointer const m = len < pseudo_median_rec_threshold
+                ? median3(a, b, c, comp)
+                : median3_rec(a, b, c, len_div_8, comp);
             return static_cast<size_type>(m - v);
         }
 
         template<typename Compare>
-            requires std::strict_weak_order<Compare, const_reference, const_reference> && std::is_trivially_copyable_v<value_type>
-        static auto partition_lomuto_branchless_cyclic(pointer v, const size_type len, const_pointer pivot, Compare& comp) -> size_type {
+            requires std::strict_weak_order<Compare, const_reference, const_reference> &&
+                     std::is_trivially_copyable_v<value_type>
+        static auto partition_lomuto_branchless_cyclic(pointer v,
+                                                       const size_type len,
+                                                       const_pointer pivot,
+                                                       Compare& comp) -> size_type {
             if (len == 0) {
                 return 0;
             }
@@ -2846,7 +2866,9 @@ namespace collections {
             alignas(value_type) unsigned char gap_storage[sizeof(value_type)];
             pointer const gap_value = std::launder(reinterpret_cast<pointer>(gap_storage));
 
-            std::memcpy(static_cast<void*>(gap_storage), static_cast<const void*>(v_base), sizeof(value_type));
+            std::memcpy(static_cast<void*>(gap_storage),
+                        static_cast<const void*>(v_base),
+                        sizeof(value_type));
 
             pointer gap_pos = v_base;
             pointer right = v_base + 1;
@@ -2856,8 +2878,13 @@ namespace collections {
                 const bool right_is_lt = comp(*right, pivot_val);
                 pointer const left = v_base + num_lt;
 
-                std::memmove(static_cast<void*>(gap_pos), static_cast<const void*>(left), sizeof(value_type));
-                std::memcpy(static_cast<void*>(left), static_cast<const void*>(right), sizeof(value_type));
+                std::memmove(static_cast<void*>(gap_pos),
+                             static_cast<const void*>(left),
+                             sizeof(value_type));
+
+                std::memcpy(static_cast<void*>(left),
+                            static_cast<const void*>(right),
+                            sizeof(value_type));
 
                 gap_pos = right;
                 num_lt += static_cast<size_type>(right_is_lt);
@@ -2889,8 +2916,12 @@ namespace collections {
         }
 
         template<typename Compare>
-            requires std::strict_weak_order<Compare, const_reference, const_reference> && std::is_trivially_copyable_v<value_type>
-        static auto partition_block_branchless(pointer v, const size_type len, const_pointer pivot_ptr, Compare& comp) -> size_type {
+            requires std::strict_weak_order<Compare, const_reference, const_reference> &&
+                     std::is_trivially_copyable_v<value_type>
+        static auto partition_block_branchless(pointer v,
+                                               const size_type len,
+                                               const_pointer pivot_ptr,
+                                               Compare& comp) -> size_type {
             if (len == 0) {
                 return 0;
             }
@@ -2963,7 +2994,8 @@ namespace collections {
 
             if (lbits != 0) {
                 while (lbits != 0) {
-                    const int tl = 63 - std::countl_zero(lbits); lbits &= (static_cast<std::uint64_t>(1) << tl) - 1;
+                    const int tl = 63 - std::countl_zero(lbits);
+                    lbits &= (static_cast<std::uint64_t>(1) << tl) - 1;
                     std::swap(first[tl], *lm1); --lm1;
                 }
 
@@ -3009,7 +3041,8 @@ namespace collections {
                 }
 
                 if (tmp == nullptr) {
-                    tmp = std::construct_at(reinterpret_cast<pointer>(tmp_storage), std::move(*left));
+                    tmp = std::construct_at(reinterpret_cast<pointer>(tmp_storage),
+                                            std::move(*left));
                 } else {
                     *gap_pos = std::move(*left);
                 }
@@ -3070,7 +3103,9 @@ namespace collections {
                                                 const size_type len,
                                                 Compare& comp,
                                                 std::index_sequence<K...>) {
-            [[maybe_unused]] const bool matched = ((len == K ? (network_sort<K>(v, comp), true) : false) || ...);
+            [[maybe_unused]] const bool matched = (
+                (len == K ? (network_sort<K>(v, comp), true) : false) || ...
+            );
         }
 
         template<typename Compare>
@@ -3085,7 +3120,12 @@ namespace collections {
                          alignof(value_type) <= alignof(std::max_align_t) &&
                          network_base_threshold >= 2) {
                 if (len <= network_base_threshold) {
-                    small_sort_network_dispatch(v, len, comp, std::make_index_sequence<network_base_threshold + 1>{});
+                    small_sort_network_dispatch(v,
+                                                len,
+                                                comp,
+                                                std::make_index_sequence<
+                                                    network_base_threshold + 1
+                                                >{});
                     return;
                 }
             }
@@ -3193,13 +3233,15 @@ namespace collections {
             return this->values_[index];
         }
 
-        [[nodiscard]] constexpr auto at_noexcept(const size_type index) noexcept -> std::expected<std::reference_wrapper<value_type>, array_error> {
+        [[nodiscard]] constexpr auto at_noexcept(const size_type index) noexcept
+            -> std::expected<std::reference_wrapper<value_type>, array_error> {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
-        [[nodiscard]] constexpr auto at_noexcept(const size_type index) const noexcept -> std::expected<std::reference_wrapper<const value_type>, array_error> {
+        [[nodiscard]] constexpr auto at_noexcept(const size_type index) const noexcept
+            -> std::expected<std::reference_wrapper<const value_type>, array_error> {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
@@ -3208,9 +3250,13 @@ namespace collections {
 
         [[nodiscard]] constexpr auto front() noexcept -> reference { return this->values_[0]; }
 
-        [[nodiscard]] constexpr auto front() const noexcept -> const_reference { return this->values_[0]; }
+        [[nodiscard]] constexpr auto front() const noexcept -> const_reference {
+            return this->values_[0];
+        }
 
-        [[nodiscard]] constexpr auto back() noexcept -> reference { return this->values_[this->size() - 1]; }
+        [[nodiscard]] constexpr auto back() noexcept -> reference {
+            return this->values_[this->size() - 1];
+        }
 
         [[nodiscard]] constexpr auto back() const noexcept -> const_reference {
             return this->values_[this->size() - 1];
@@ -3218,19 +3264,29 @@ namespace collections {
 
         [[nodiscard]] constexpr auto data() noexcept -> pointer { return this->values_; }
 
-        [[nodiscard]] constexpr auto data() const noexcept -> const_pointer { return this->values_; }
+        [[nodiscard]] constexpr auto data() const noexcept -> const_pointer {
+            return this->values_;
+        }
 
         [[nodiscard]] constexpr auto begin() noexcept -> iterator { return this->values_; }
 
         [[nodiscard]] constexpr auto end() noexcept -> iterator { return this->values_ + N; }
 
-        [[nodiscard]] constexpr auto begin() const noexcept -> const_iterator { return this->values_; }
+        [[nodiscard]] constexpr auto begin() const noexcept -> const_iterator {
+            return this->values_;
+        }
 
-        [[nodiscard]] constexpr auto end() const noexcept -> const_iterator { return this->values_ + N; }
+        [[nodiscard]] constexpr auto end() const noexcept -> const_iterator {
+            return this->values_ + N;
+        }
 
-        [[nodiscard]] constexpr auto cbegin() const noexcept -> const_iterator { return this->values_; }
+        [[nodiscard]] constexpr auto cbegin() const noexcept -> const_iterator {
+            return this->values_;
+        }
 
-        [[nodiscard]] constexpr auto cend() const noexcept -> const_iterator { return this->values_ + N; }
+        [[nodiscard]] constexpr auto cend() const noexcept -> const_iterator {
+            return this->values_ + N;
+        }
 
         [[nodiscard]] constexpr auto rbegin() noexcept -> reverse_iterator {
             return reverse_iterator(this->end());
@@ -3279,7 +3335,9 @@ namespace collections {
         }
 
         template<std::contiguous_iterator Iterator, typename Compare>
-            requires std::strict_weak_order<Compare, std::iter_value_t<Iterator>, std::iter_value_t<Iterator>>
+            requires std::strict_weak_order<Compare,
+                                            std::iter_value_t<Iterator>,
+                                            std::iter_value_t<Iterator>>
         constexpr void sort(Iterator first, Iterator last, Compare comp) {
             if constexpr (N <= 1) {
                 return;
@@ -3301,7 +3359,9 @@ namespace collections {
         }
 
         template<std::contiguous_iterator Iterator>
-            requires std::strict_weak_order<std::less<value_type>, std::iter_value_t<Iterator>, std::iter_value_t<Iterator>>
+            requires std::strict_weak_order<std::less<value_type>,
+                                            std::iter_value_t<Iterator>,
+                                            std::iter_value_t<Iterator>>
         constexpr void sort(Iterator first, Iterator last) {
             if constexpr (N <= 1) {
                 return;
