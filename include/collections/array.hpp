@@ -3438,6 +3438,7 @@ namespace collections {
             return this->values_[index];
         }
 
+        // ── Methods ──────────────────────────────────────────────────────────────────────────────────
         [[nodiscard]] constexpr auto at(const size_type index) -> reference {
             if (index >= N) [[unlikely]] {
                 throw std::out_of_range("collections::array::at index out of range");
