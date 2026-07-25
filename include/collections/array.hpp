@@ -3214,7 +3214,8 @@ namespace collections {
             return this->values_[index];
         }
 
-        [[nodiscard]] constexpr auto operator[](const size_type index) const noexcept -> const_reference {
+        [[nodiscard]] constexpr auto operator[](const size_type index) const noexcept
+            -> const_reference {
             return this->values_[index];
         }
 
