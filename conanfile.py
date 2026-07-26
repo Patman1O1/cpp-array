@@ -25,10 +25,10 @@ class Array(ConanFile):
 
     def configure(self) -> None:
         if bool(self.options.build_all):
-            self.options.build_benchmarks = True
-            self.options.build_tests = True
+            self.options.build_benchmarks.value = True
+            self.options.build_tests.value = True
         elif self.settings.build_type == "Debug":
-            self.options.build_tests = True
+            self.options.build_tests.value = True
 
     def build_requirements(self) -> None:
         self.tool_requires("cmake/[>=4.3.0]")
