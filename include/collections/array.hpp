@@ -13,7 +13,7 @@
 #include <expected>
 #include <functional>
 #include <iterator>
-#include <memory
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <type_traits>
@@ -2673,16 +2673,17 @@ namespace collections {
             [&]<size_type... I>(std::index_sequence<I...>) -> void {
                 (compare_exchange(start,
                                   network_table[K].pairs[I].first,
-                                  network_table[K].pairs[I].second, comp), ...);
+                                  network_table[K].pairs[I].second,
+                                  comp), ...);
             }(std::make_index_sequence<network_table[K].size>{});
         }
 
         template<size_type K, typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference> &&
                      (K <= max_network_size)
-        static constexpr void network_sort_adaptive(pointer v, Compare& comp) {
+        static constexpr void network_sort_adaptive(pointer vals, Compare& comp) {
             if constexpr (K < 2) {
-                network_sort<K>(v, comp);
+                network_sort<K>(vals, comp);
                 return;
             }
 
@@ -2690,8 +2691,8 @@ namespace collections {
             bool descending = true;
 
             for (size_type i = 1; i < K; i++) {
-                ascending &= !comp(v[i], v[i - 1]);
-                descending &= comp(v[i], v[i - 1]);
+                ascending &= !comp(vals[i], vals[i - 1]);
+                descending &= comp(vals[i], vals[i - 1]);
             }
 
             if (ascending) {
@@ -2699,16 +2700,16 @@ namespace collections {
             }
 
             if (descending) {
-                std::reverse(v, v + K);
+                std::reverse(vals, vals + K);
                 return;
             }
 
-            network_sort<K>(v, comp);
+            network_sort<K>(vals, comp);
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr void insert_tail(pointer begin, pointer tail, Compare& comp) {
+        static constexpr void insert_tail(const_pointer begin, pointer tail, Compare& comp) {
             pointer sift = tail - 1;
 
             if (!comp(*tail, *sift)) {
@@ -2736,7 +2737,7 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr void insertion_sort(pointer v,
+        static constexpr void insertion_sort(pointer vals,
                                              const size_type len,
                                              const size_type offset,
                                              Compare& comp) {
@@ -2744,78 +2745,78 @@ namespace collections {
                 return;
             }
 
-            value_type* const v_end = v + len;
+            pointer const v_end = vals + len;
 
-            for (pointer tail = v + offset; tail != v_end; tail++) {
-                insert_tail(v, tail, comp);
+            for (pointer tail = vals + offset; tail != v_end; ++tail) {
+                insert_tail(vals, tail, comp);
             }
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr auto find_existing_run(const_pointer v,
+        static constexpr auto find_existing_run(const_pointer vals,
                                                 const size_type len,
                                                 Compare& comp) -> std::pair<size_type, bool> {
             if (len < 2) {
-                return {len, false};
+                return std::pair{len, false};
             }
 
             size_type run_len = 2;
-            const bool strictly_descending = comp(v[1], v[0]);
+            const bool strictly_descending = comp(vals[1], vals[0]);
             if (strictly_descending) {
-                while (run_len < len && comp(v[run_len], v[run_len - 1])) {
+                while (run_len < len && comp(vals[run_len], vals[run_len - 1])) {
                     ++run_len;
                 }
             } else {
-                while (run_len < len && !comp(v[run_len], v[run_len - 1])) {
+                while (run_len < len && !comp(vals[run_len], vals[run_len - 1])) {
                     ++run_len;
                 }
             }
-            return {run_len, strictly_descending};
+            return std::pair{run_len, strictly_descending};
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static constexpr void sift_down(pointer v,
-                                        const size_type len,
+        static constexpr void sift_down(pointer vals,
+                                        const size_type sz,
                                         size_type node,
                                         Compare& comp) {
             while (true) {
                 size_type child = 2 * node + 1;
 
-                if (child >= len) {
+                if (child >= sz) {
                     break;
                 }
 
-                if (child + 1 < len) {
-                    child += static_cast<size_type>(comp(v[child], v[child + 1]));
+                if (child + 1 < sz) {
+                    child += static_cast<size_type>(comp(vals[child], vals[child + 1]));
                 }
 
-                if (!comp(v[node], v[child])) {
+                if (!comp(vals[node], vals[child])) {
                     break;
                 }
 
-                std::swap(v[node], v[child]);
+                std::swap(vals[node], vals[child]);
                 node = child;
             }
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        [[gnu::noinline]] static constexpr void heapsort(pointer v,
-                                                         const size_type len,
+        [[gnu::noinline]] static constexpr void heapsort(pointer vals,
+                                                         const size_type sz,
                                                          Compare& comp) {
-            for (size_type i = len + len / 2; i-- > 0;) {
+            for (size_type i = sz + sz / 2; i > 0; i--) {
                 size_type sift_idx;
 
-                if (i >= len) {
-                    sift_idx = i - len;
+                if (i >= sz) {
+                    sift_idx = i - sz;
                 } else {
-                    std::swap(v[0], v[i]);
+                    std::swap(vals[0], vals[i]);
                     sift_idx = 0;
                 }
 
-                sift_down(v, i < len ? i : len, sift_idx, comp);
+                sift_down(vals, i < sz ? i : sz, sift_idx, comp);
             }
         }
 
@@ -2871,15 +2872,15 @@ namespace collections {
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference> &&
                      std::is_trivially_copyable_v<value_type>
-        static auto partition_lomuto_branchless_cyclic(pointer v,
-                                                       const size_type len,
+        static auto partition_lomuto_branchless_cyclic(const_pointer vals,
+                                                       const size_type sz,
                                                        const_pointer pivot,
                                                        Compare& comp) -> size_type {
-            if (len == 0) {
+            if (sz == 0) {
                 return 0;
             }
 
-            pointer const v_base = v;
+            pointer const v_base = vals;
             const value_type pivot_val = *pivot;
             alignas(value_type) unsigned char gap_storage[sizeof(value_type)];
             pointer const gap_value = std::launder(reinterpret_cast<pointer>(gap_storage));
@@ -2911,7 +2912,7 @@ namespace collections {
             };
 
             constexpr size_type unroll_len = sizeof(value_type) <= 16 ? 2 : 1;
-            pointer const unroll_end = v_base + (len - (unroll_len - 1));
+            pointer const unroll_end = v_base + (sz - (unroll_len - 1));
 
             while (right < unroll_end) {
                 loop_body();
@@ -2920,7 +2921,7 @@ namespace collections {
                 }
             }
 
-            pointer const end = v_base + len;
+            pointer const end = v_base + sz;
             while (true) {
                 const bool is_done = right == end;
                 if (is_done) {
@@ -2939,18 +2940,18 @@ namespace collections {
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference> &&
                      std::is_trivially_copyable_v<value_type>
-        static auto partition_block_branchless(pointer v,
-                                               const size_type len,
+        static auto partition_block_branchless(pointer vals,
+                                               const size_type sz,
                                                const_pointer pivot_ptr,
                                                Compare& comp) -> size_type {
-            if (len == 0) {
+            if (sz == 0) {
                 return 0;
             }
 
             const value_type pivot = *pivot_ptr;
             constexpr size_type block = 64;
-            pointer first = v;
-            pointer lm1 = v + len - 1;
+            pointer first = vals;
+            pointer lm1 = vals + sz - 1;
             std::uint64_t lbits = 0;
             std::uint64_t rbits = 0;
 
@@ -3027,24 +3028,24 @@ namespace collections {
                 }
             }
 
-            return static_cast<size_type>(first - v);
+            return static_cast<size_type>(first - vals);
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static auto partition_hoare_branchy_cyclic(pointer v,
-                                                   const size_type len,
+        static auto partition_hoare_branchy_cyclic(const_pointer vals,
+                                                   const size_type sz,
                                                    const_pointer pivot,
                                                    Compare& comp) -> size_type {
-            if (len == 0) {
+            if (sz == 0) {
                 return 0;
             }
 
-            pointer const v_base = v;
+            pointer const v_base = vals;
             pointer left = v_base;
-            pointer right = v_base + len;
+            pointer right = v_base + sz;
 
-            alignas(value_type) unsigned char tmp_storage[sizeof(value_type)];
+            alignas(value_type) std::uint8_t tmp_storage[sizeof(value_type)];
 
             pointer tmp = nullptr;
             pointer gap_pos = nullptr;
@@ -3085,29 +3086,29 @@ namespace collections {
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static auto partition(pointer v,
-                              const size_type len,
+        static auto partition(pointer vals,
+                              const size_type sz,
                               const size_type pivot_pos,
                               Compare& comp) -> size_type {
-            if (len == 0) {
+            if (sz == 0) {
                 return 0;
             }
 
-            std::swap(v[0], v[pivot_pos]);
-            const_pointer const pivot = v + 0;
+            std::swap(vals[0], vals[pivot_pos]);
+            const_pointer const pivot = vals + 0;
             size_type num_lt;
 
             if constexpr (std::is_trivially_copyable_v<value_type> && sizeof(value_type) <= 96) {
                 if constexpr (COLLECTIONS_ARRAY_USE_BLOCK_PARTITION) {
-                    num_lt = partition_block_branchless(v + 1, len - 1, pivot, comp);
+                    num_lt = partition_block_branchless(vals + 1, sz - 1, pivot, comp);
                 } else {
-                    num_lt = partition_lomuto_branchless_cyclic(v + 1, len - 1, pivot, comp);
+                    num_lt = partition_lomuto_branchless_cyclic(vals + 1, sz - 1, pivot, comp);
                 }
             } else {
-                num_lt = partition_hoare_branchy_cyclic(v + 1, len - 1, pivot, comp);
+                num_lt = partition_hoare_branchy_cyclic(vals + 1, sz - 1, pivot, comp);
             }
 
-            std::swap(v[0], v[num_lt]);
+            std::swap(vals[0], vals[num_lt]);
             return num_lt;
         }
 
@@ -3122,19 +3123,19 @@ namespace collections {
 
         template<typename Compare, size_type... K>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static void small_sort_network_dispatch(pointer v,
-                                                const size_type len,
+        static void small_sort_network_dispatch(pointer vals,
+                                                const size_type sz,
                                                 Compare& comp,
                                                 std::index_sequence<K...>) {
             [[maybe_unused]] const bool matched = (
-                (len == K ? (network_sort<K>(v, comp), true) : false) || ...
+                (sz == K ? (network_sort<K>(vals, comp), true) : false) || ...
             );
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static void small_sort(pointer v, const size_type len, Compare& comp) {
-            if (len < 2) [[unlikely]] {
+        static void small_sort(pointer vals, const size_type sz, Compare& comp) {
+            if (sz < 2) [[unlikely]] {
                 return;
             }
 
@@ -3142,80 +3143,81 @@ namespace collections {
                           sizeof(value_type) <= 16 &&
                           alignof(value_type) <= alignof(std::max_align_t) &&
                           network_base_threshold >= 2) {
-                if (len <= network_base_threshold) {
+                if (sz <= network_base_threshold) {
                     small_sort_network_dispatch(
-                        v,
-                        len,
+                        vals,
+                        sz,
                         comp,
                         std::make_index_sequence<network_base_threshold + 1>{}
                     );
                     return;
                 }
             }
-            insertion_sort(v, len, 1, comp);
+            insertion_sort(vals, sz, 1, comp);
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static void quicksort(pointer v,
-                              size_type len,
+        static void quicksort(pointer vals,
+                              size_type sz,
                               const_pointer ancestor_pivot,
-                              std::uint32_t limit, Compare& comp) {
+                              std::uint32_t limit,
+                              Compare& comp) {
             while (true) {
-                if (len <= small_sort_threshold()) {
-                    small_sort(v, len, comp);
+                if (sz <= small_sort_threshold()) {
+                    small_sort(vals, sz, comp);
                     return;
                 }
 
                 if (limit == 0) {
-                    heapsort(v, len, comp);
+                    heapsort(vals, sz, comp);
                     return;
                 }
 
                 limit--;
-                const size_type pivot_pos = choose_pivot(v, len, comp);
-                if (ancestor_pivot != nullptr && !comp(*ancestor_pivot, v[pivot_pos])) {
+                const size_type pivot_pos = choose_pivot(vals, sz, comp);
+                if (ancestor_pivot != nullptr && !comp(*ancestor_pivot, vals[pivot_pos])) {
                     auto not_greater = [&](const_reference a, const_reference b) {
                         return !comp(b, a);
                     };
-                    const size_type num_lt = partition(v, len, pivot_pos, not_greater);
-                    v += num_lt + 1;
-                    len -= num_lt + 1;
+                    const size_type num_lt = partition(vals, sz, pivot_pos, not_greater);
+                    vals += num_lt + 1;
+                    sz -= num_lt + 1;
                     ancestor_pivot = nullptr;
                     continue;
                 }
 
-                const size_type num_lt = partition(v, len, pivot_pos, comp);
-                quicksort(v, num_lt, ancestor_pivot, limit, comp);
-                const_pointer const pivot = v + num_lt;
-                v += num_lt + 1;
-                len -= num_lt + 1;
+                const size_type num_lt = partition(vals, sz, pivot_pos, comp);
+                quicksort(vals, num_lt, ancestor_pivot, limit, comp);
+                const_pointer const pivot = vals + num_lt;
+                vals += num_lt + 1;
+                sz -= num_lt + 1;
                 ancestor_pivot = pivot;
             }
         }
 
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static void ipnsort(pointer v, const size_type len, Compare& comp) {
-            if (len < 2) [[unlikely]] {
+        static void ipnsort(pointer vals, const size_type sz, Compare& comp) {
+            if (sz < 2) [[unlikely]] {
                 return;
             }
 
-            if (constexpr size_type max_len_always_insertion_sort = 20;
-                len <= max_len_always_insertion_sort) {
-                insertion_sort(v, len, 1, comp);
+            if (constexpr size_type max_sz_always_insertion_sort = 20;
+                sz <= max_sz_always_insertion_sort) {
+                insertion_sort(vals, sz, 1, comp);
                 return;
             }
 
-            const auto [run_len, was_reversed] = find_existing_run(v, len, comp);
-            if (run_len == len) {
+            const auto [run_sz, was_reversed] = find_existing_run(vals, sz, comp);
+            if (run_sz == sz) {
                 if (was_reversed) {
-                    std::reverse(v, v + len);
+                    std::reverse(vals, vals + sz);
                 }
                 return;
             }
-            const auto limit = static_cast<std::uint32_t>(2 * std::bit_width(len | 1) - 2);
-            quicksort(v, len, static_cast<const_pointer>(nullptr), limit, comp);
+            const auto limit = static_cast<std::uint32_t>(2 * std::bit_width(sz | 1) - 2);
+            quicksort(vals, sz, static_cast<const_pointer>(nullptr), limit, comp);
         }
 
         template<typename Compare>
@@ -3235,11 +3237,11 @@ namespace collections {
 
         // Smallest index in [lo, hi) of `arr` at which `pred(arr[idx])` becomes false, assuming pred is
         // monotone (true...false). Used to gallop to a run boundary. O(log) via exponential + binary search.
-        template<typename Pred> requires std::predicate<Pred>
+        template<std::predicate<value_type> Pred>
         static size_type gallop_boundary(pointer arr,
                                          const size_type lo,
                                          const size_type hi,
-                                         Pred pred) {
+                                         const Pred pred) {
             size_type ofs = 1;
             size_type last = lo;
 
@@ -3323,8 +3325,8 @@ namespace collections {
                         --gallop;
                     }
 
-                    const value_type& rkey = rt[j];
-                    left_wins = gallop_boundary(buffer, i, n1, [&](const value_type& x) {
+                    const_reference rkey = rt[j];
+                    left_wins = gallop_boundary(buffer, i, n1, [&](const_reference x) {
                         return !comp(rkey, x);
                     }) - i;
 
@@ -3336,12 +3338,12 @@ namespace collections {
                         break;
                     }
 
-                    const value_type& lkey = buffer[i];
+                   const_reference lkey = buffer[i];
                     right_wins = gallop_boundary(
                         const_cast<pointer>(rt),
                         j,
                         n2,
-                        [&](const value_type& x) {
+                        [&](const_reference x) {
                             return comp(x, lkey);
                         }
                     ) - j;
@@ -3386,9 +3388,9 @@ namespace collections {
         // Allocates the scratch (stack when it fits, else one aligned heap block) and runs the merge sort.
         template<typename Compare>
             requires std::strict_weak_order<Compare, const_reference, const_reference>
-        static void stable_sort_run(pointer v, const size_type n, Compare& comp) {
+        static void stable_sort_run(pointer vals, const size_type n, Compare& comp) {
             if (n <= stable_insertion_threshold) {
-                stable_small_sort(v, n, comp);
+                stable_small_sort(vals, n, comp);
                 return;
             }
 
@@ -3397,14 +3399,14 @@ namespace collections {
 
             if constexpr (buf_bytes <= stable_stack_budget) {
                 alignas(value_type) std::byte storage[buf_bytes];
-                merge_sort(v, v + n, reinterpret_cast<pointer>(storage), comp);
+                merge_sort(vals, vals + n, reinterpret_cast<pointer>(storage), comp);
             } else {
                 auto const buffer = static_cast<pointer>(
                     ::operator new(buf_bytes, std::align_val_t{alignof(value_type)})
                 );
 
                 try {
-                    merge_sort(v, v + n, buffer, comp);
+                    merge_sort(vals, vals + n, buffer, comp);
                 } catch (...) {
                     ::operator delete(static_cast<void*>(buffer),
                                       buf_bytes,
@@ -3461,7 +3463,7 @@ namespace collections {
         }
 
         [[nodiscard]] constexpr auto at_noexcept(const size_type index) const noexcept
-            -> std::expected<std::reference_wrapper<const value_type>, array_error> {
+            -> std::expected<std::reference_wrapper<const_reference>, array_error> {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
