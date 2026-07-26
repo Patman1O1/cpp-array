@@ -783,6 +783,8 @@ namespace collections::array_testing {
         EXPECT_THAT(*values.crbegin(), Eq(3));
         EXPECT_THAT(*(values.crend() - 1), Eq(1));
         EXPECT_THAT(values.crend() - values.crbegin(), Eq(3));
-        EXPECT_THAT((std::vector(values.crbegin(), values.crend())), ElementsAre(3, 2, 1));
+        EXPECT_THAT(
+            (std::vector(values.crbegin(), values.crend())), testing::ElementsAre(3, 2, 1)
+        );
     }
 } // namespace collections::array_testing
