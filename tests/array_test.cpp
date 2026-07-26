@@ -166,7 +166,7 @@ namespace collections::array_testing {
         array values = {1, 2, 3};
         static_assert(std::same_as<decltype(values), array<int, 3>>);
 
-        array singleton = {1};
+        [[maybe_unused]] array singleton = {1};
         static_assert(std::same_as<decltype(singleton), array<int, 1>>);
 
         // The guide's requires-clause rejects mixed element types rather than letting argument
