@@ -1,5 +1,9 @@
-#include <collections/array.hpp>
+#include <array>
+#include <initializer_list>
+#include <iostream>
 
 int main() {
-    return 0;
+    for (auto val : array) {
+        std::println(std::cout, "{}", val);
+    }
 }
