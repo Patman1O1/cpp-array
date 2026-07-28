@@ -5,6 +5,7 @@
 #include <expected>
 #include <functional>
 #include <limits>
+#include <random>
 #include <ranges>
 #include <stdexcept>
 #include <string>
@@ -38,26 +39,10 @@ namespace collections::array_testing {
         template<array<int, 3> Values>
         struct nttp_probe { static constexpr int first = Values[0]; };
 
-        // ── struct pair ─────────────────────────────────────────────────────────────────────────
-        template<typename K, typename V>
-        struct pair {
-            K key;
-            V value;
-
-            inline constexpr auto operator==(const pair& rhs) const noexcept -> bool {
-                return this->key == rhs.key && this->value == rhs.value;
-            }
-
-            inline constexpr auto operator<=>(const pair& rhs) const noexcept {
-                return this->key <=> rhs.key && this->value <=> rhs.value;
-            }
-        };
     } // namespace
 
     // ── Aggregate Tests ─────────────────────────────────────────────────────────────────────────
     TEST(array_aggregate, is_an_aggregate) {
-        // This is the whole design: no user-declared constructors, so `= {1, 2, 3}` is aggregate
-        // initialization rather than a call. Nothing to inline, identical codegen at every -O level.
         static_assert(std::is_aggregate_v<array<int, 3>>);
         static_assert(std::is_aggregate_v<array<std::string, 2>>);
 
@@ -110,14 +95,11 @@ namespace collections::array_testing {
         EXPECT_THAT(values[0], Eq("a string long enough to defeat the small string optimization"));
         EXPECT_THAT(values[1], Eq("another string long enough to defeat the small string optimization"));
 
-        // Moved-from is unspecified-but-valid; only the fact that a move happened is checkable.
         EXPECT_THAT(first, Ne("a string long enough to defeat the small string optimization"));
         EXPECT_THAT(second, Ne("another string long enough to defeat the small string optimization"));
     }
 
     TEST(array_aggregate, special_members_are_implicit_and_trivial) {
-        // The payoff of declaring none of them: trivially copyable types get passed in registers
-        // and memcpy'd by every stdlib algorithm. A single `= default` would have cost aggregate status.
         static_assert(std::is_trivially_default_constructible_v<array<int, 3>>);
         static_assert(std::is_trivially_copy_constructible_v<array<int, 3>>);
         static_assert(std::is_trivially_move_constructible_v<array<int, 3>>);
@@ -369,11 +351,9 @@ namespace collections::array_testing {
         EXPECT_THAT(result->get(), Eq(1));
         EXPECT_THAT(&result->get(), Eq(&values[0]));
 
-        // The referenced element is mutable through the wrapper.
         result->get() = 10;
         EXPECT_THAT(values[0], Eq(10));
 
-        // The array is created inside the evaluation here, so its address is usable within it.
         static_assert([] -> bool {
             array inner = {1, 2, 3};
             const auto ok = inner.at_noexcept(2);
