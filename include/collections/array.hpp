@@ -64,7 +64,19 @@ namespace collections {
             return this->values_[index];
         }
 
+    private:
         // ── Methods ──────────────────────────────────────────────────────────────────────────────────
+        template<std::predicate<bool, value_type, value_type> Predicate>
+        inline constexpr void _sort(iterator first, iterator last, Predicate pred) {
+            std::sort(first, last, pred);
+        }
+
+        template<std::predicate<bool, value_type, value_type> Predicate>
+        inline constexpr void _stable_sort(iterator first, iterator last, Predicate pred) {
+            std::stable_sort(first, last, pred);
+        }
+
+    public:
         [[nodiscard]] constexpr auto at(const size_type index) -> reference {
             if (index >= N) [[unlikely]] {
                 throw std::out_of_range("collections::array::at index out of range");
@@ -172,6 +184,47 @@ namespace collections {
         constexpr void swap(array& other)
             noexcept(std::is_nothrow_swappable_v<value_type>) {
             std::swap(this->values_, other.values_);
+        }
+
+        constexpr void sort() {
+            this->_sort(this->begin(), this->end(), std::less<value_type>{});
+        }
+
+        template<std::contiguous_iterator Iterator = iterator>
+        constexpr void sort(Iterator first, Iterator last) {
+            if (first == last) [[unlikely]] {
+                return;
+            }
+            this->_sort(first, last, std::less<value_type>{});
+        }
+
+        template<std::contiguous_iterator Iterator = iterator,
+                 std::predicate<bool, value_type, value_type> Predicate>
+        constexpr void sort(Iterator first, Iterator last, Predicate pred) {
+            if (first == last) [[unlikely]] {
+                return;
+            }
+            this->_sort(first, last, pred);
+        }
+
+
+        constexpr void stable_sort() {
+            this->_stable_sort(this->begin(), this->end(), std::less<value_type>{});
+        }
+
+        constexpr void stable_sort(iterator first, iterator last) {
+            if (first == last) [[unlikely]] {
+                return;
+            }
+            this->_stable_sort(first, last, std::less<value_type>{});
+        }
+
+        template<std::predicate<bool, value_type, value_type> Predicate>
+        constexpr void stable_sort(iterator first, iterator last, Predicate pred) {
+            if (first == last) [[unlikely]] {
+                return;
+            }
+            this->_stable_sort(first, last, pred);
         }
     };
 
