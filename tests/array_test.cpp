@@ -93,11 +93,11 @@ namespace collections::array_testing {
 
             const array values = {std::move(first), std::move(second)};
 
-            EXPECT_THAT(values[0], Eq("a string long enough to defeat the small string optimization"));
-            EXPECT_THAT(values[1], Eq("another string long enough to defeat the small string optimization"));
+            EXPECT_EQ(values[0], "a string long enough to defeat the small string optimization");
+            EXPECT_EQ(values[1], "another string long enough to defeat the small string optimization");
 
-            EXPECT_THAT(first, Ne("a string long enough to defeat the small string optimization"));
-            EXPECT_THAT(second, Ne("another string long enough to defeat the small string optimization"));
+            EXPECT_NE(first, "a string long enough to defeat the small string optimization");
+            EXPECT_NE(second, "another string long enough to defeat the small string optimization");
         }
 
         TEST(array_aggregate, special_members_are_implicit_and_trivial) {
