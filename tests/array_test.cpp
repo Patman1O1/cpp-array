@@ -767,14 +767,20 @@ namespace collections::array_testing {
         TEST(array_iterators, rbegin_starts_at_the_last_element) {
             array values = {1, 2, 3};
 
-            EXPECT_THAT(*values.rbegin(), Eq(3));
-            EXPECT_THAT(*(values.rend() - 1), Eq(1));
-            EXPECT_THAT(values.rend() - values.rbegin(), Eq(3));
-            EXPECT_THAT(&*values.rbegin(), Eq(&values.back()));
-            EXPECT_THAT((std::vector(values.rbegin(), values.rend())), ElementsAre(3, 2, 1));
+            EXPECT_EQ(3, *values.rbegin());
+            EXPECT_EQ(1, *(values.rend() - 1));
+            EXPECT_EQ(3, values.rend() - values.rbegin());
+            EXPECT_EQ(&values.back(), &*values.rbegin());
+
+            const std::span expected{values.begin(), values.end()};
+            EXPECT_EQ(expected[0], values[0]);
+            EXPECT_EQ(expected[1], values[1]);
+            EXPECT_EQ(expected[2], values[2]);
 
             *values.rbegin() = 30;
-            EXPECT_THAT(values, ElementsAre(1, 2, 30));
+            EXPECT_EQ(1, values[0]);
+            EXPECT_EQ(2, values[1]);
+            EXPECT_EQ(30, values[2]);
         }
 
         TEST(array_iterators, crbegin_and_crend_walk_backwards_constly) {
