@@ -534,7 +534,7 @@ namespace collections::array_testing {
             EXPECT_EQ(&values.front(), &values.back());
 
             values.back() = 10;
-            EXPECT_THAT(values[0], Eq(10));
+            EXPECT_EQ(10, values[0]);
         }
 
         TEST(array_methods, back_mut_overload_multi_element_array) {
