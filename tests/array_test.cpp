@@ -366,21 +366,24 @@ namespace collections::array_testing {
         TEST(array_methods, at_noexcept_mut_overload_unexpected_return_value) {
             array values = {1, 2, 3};
 
-            constexpr auto result = values.at_noexcept(3);
-            ASSERT_FALSE(result.has_value());
-            EXPECT_THAT(result.error(), Eq(array<int, 3>::array_error::out_of_range));
+            constexpr std::expected result = values.at_noexcept(3);
 
-            constexpr auto far_result = values.at_noexcept(
+            ASSERT_FALSE(result.has_value());
+
+            static_assert(result.error() == array<int, 3>::array_error::out_of_range);
+
+            constexpr std::expected far_result = values.at_noexcept(
                 std::numeric_limits<array<int, 3>::size_type>::max()
             );
             ASSERT_FALSE(far_result.has_value());
-            EXPECT_THAT(far_result.error(), Eq(array<int, 3>::array_error::out_of_range));
+
+            static_assert(far_result.error() == array<int, 3>::array_error::out_of_range);
 
             EXPECT_NO_THROW(static_cast<void>(values.at_noexcept(3)));
 
             static_assert([] -> bool {
                 array inner = {1, 2, 3};
-                constexpr auto err = inner.at_noexcept(3);
+                constexpr std::expected err = inner.at_noexcept(3);
                 return array<int, 3>::array_error::out_of_range == err.error();
             }());
         }
@@ -395,13 +398,15 @@ namespace collections::array_testing {
             );
 
             static constexpr array values = {1, 2, 3};
-            constexpr auto result = values.at_noexcept(0);
+            constexpr std::expected result = values.at_noexcept(0);
 
             static_assert(result.has_value());
             static_assert(1 == result->get());
             static_assert(std::is_const_v<std::remove_reference_t<decltype(result->get())>>);
             static_assert(2 == values.at_noexcept(1)->get());
 
+            EXPECT_EQ(1, result->get());
+            EXPECT_EQ(&values[0], &result->get());
             EXPECT_THAT(result->get(), Eq(1));
             EXPECT_THAT(&result->get(), Eq(values.data()));
         }
