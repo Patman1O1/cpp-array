@@ -637,12 +637,16 @@ namespace collections::array_testing {
 
             array values = {1, 2, 3};
             values.fill(7);
-            EXPECT_THAT(values, ElementsAre(7, 7, 7));
+            EXPECT_EQ(7, values[0]);
+            EXPECT_EQ(7, values[1]);
+            EXPECT_EQ(7, values[2]);
 
             const int* const before = values.data();
             values.fill(0);
-            EXPECT_THAT(values.data(), Eq(before));
-            EXPECT_THAT(values, ElementsAre(0, 0, 0));
+            EXPECT_EQ(before, values.data());
+            EXPECT_EQ(0, values[0]);
+            EXPECT_EQ(0, values[1]);
+            EXPECT_EQ(0, values[2]);
         }
 
         TEST(array_methods, fill_noexcept_follows_the_element_assignment) {
