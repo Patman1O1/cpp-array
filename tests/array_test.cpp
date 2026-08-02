@@ -610,8 +610,8 @@ namespace collections::array_testing {
             static_assert(noexcept(std::declval<array<int, 3>&>().data()));
 
             array values = {1, 2, 3};
-            EXPECT_THAT(values.data(), Eq(values.data()));
-            EXPECT_THAT(values.data() + 2, Eq(&values[2]));
+            EXPECT_EQ(values.data(), values.data());
+            EXPECT_EQ(&values[2], values.data() + 2);
         }
 
         TEST(array_methods, size_and_max_size_and_empty_are_compile_time_constants) {
