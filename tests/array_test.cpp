@@ -128,10 +128,10 @@ namespace collections::array_testing {
             array source = {1, 2, 3};
             array<int, 3> copy = source;
 
-            EXPECT_THAT(copy[0], testing::Eq(1));
-            EXPECT_THAT(copy[1], testing::Eq(2));
-            EXPECT_THAT(copy[2], testing::Eq(3));
-            EXPECT_THAT(copy.data(), testing::Ne(source.data()));
+            EXPECT_EQ(1, copy[0]);
+            EXPECT_EQ(2, copy[1]);
+            EXPECT_EQ(3, copy[2]);
+            EXPECT_NE(copy.data(), source.data());
         }
 
         TEST(array_aggregate, copy_assignment_is_not_deleted) {
