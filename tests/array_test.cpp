@@ -772,10 +772,10 @@ namespace collections::array_testing {
             EXPECT_EQ(3, values.rend() - values.rbegin());
             EXPECT_EQ(&values.back(), &*values.rbegin());
 
-            const std::vector<int> expected{values.begin(), values.end()};
-            EXPECT_EQ(expected[0], values[0]);
-            EXPECT_EQ(expected[1], values[1]);
-            EXPECT_EQ(expected[2], values[2]);
+            const std::vector<int> span{values.begin(), values.end()};
+            EXPECT_EQ(1, span[0]);
+            EXPECT_EQ(2, span[1]);
+            EXPECT_EQ(3, span[2]);
 
             *values.rbegin() = 30;
             EXPECT_EQ(1, values[0]);
