@@ -324,7 +324,7 @@ namespace collections::array_testing {
 
             EXPECT_NO_THROW(static_cast<void>(values.at(0)));
             EXPECT_NO_THROW(static_cast<void>(values.at(2)));
-            EXPECT_THAT(&values.at(2), Eq(&values[2]));
+            EXPECT_EQ(&values[2], &values.at(2));
         }
 
         TEST(array_methods, at_const_overload_throws) {
