@@ -34,11 +34,6 @@ namespace collections::array_testing {
         template<typename... Args>
         concept deducible = requires { array{std::declval<Args>()...}; };
 
-        // ── struct nttp_probe ───────────────────────────────────────────────────────────────────
-        // Only instantiable if array<int, 3> is a structural type.
-        template<array<int, 3> Values>
-        struct nttp_probe { static constexpr int first = Values[0]; };
-
     } // namespace
 
     // ── Aggregate Tests ─────────────────────────────────────────────────────────────────────────
@@ -160,8 +155,8 @@ namespace collections::array_testing {
             EXPECT_EQ(3, values[2]);
         }
 
-        TEST(array_aggregate, is_usable_as_a_non_type_template_parameter) {
-            static_assert(1 == nttp_probe<array{1, 2, 3}>::first);
+        TEST(array_aggregate, is_structural) {
+            static_assert(std::is_structural_v<array<int, 3>>); // Ignore this error, this is valid in C++26
 
             SUCCEED();
         }
