@@ -772,7 +772,7 @@ namespace collections::array_testing {
             EXPECT_EQ(3, values.rend() - values.rbegin());
             EXPECT_EQ(&values.back(), &*values.rbegin());
 
-            const std::span expected{values.begin(), values.end()};
+            const std::vector<int> expected{values.begin(), values.end()};
             EXPECT_EQ(expected[0], values[0]);
             EXPECT_EQ(expected[1], values[1]);
             EXPECT_EQ(expected[2], values[2]);
@@ -791,9 +791,14 @@ namespace collections::array_testing {
             );
             static_assert(std::is_const_v<std::remove_reference_t<decltype(*values.crbegin())>>);
 
-            EXPECT_THAT(*values.crbegin(), Eq(3));
-            EXPECT_THAT(*(values.crend() - 1), Eq(1));
-            EXPECT_THAT(values.crend() - values.crbegin(), Eq(3));
+            EXPECT_EQ(3, *values.crbegin());
+            EXPECT_EQ(1, *(values.crend() - 1));
+            EXPECT_EQ(3, values.crend() - values.crbegin());
+
+            const std::vector<int> span{values.crbegin(), values.crend()};
+            EXPECT_EQ(3, span[0]);
+            EXPECT_EQ(2, span[1]);
+            EXPECT_EQ(1, span[2]);
             EXPECT_THAT(
                 (std::vector(values.crbegin(), values.crend())), testing::ElementsAre(3, 2, 1)
             );
