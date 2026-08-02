@@ -417,7 +417,7 @@ namespace collections::array_testing {
 
             constexpr auto result = values.at_noexcept(3);
             ASSERT_FALSE(result.has_value());
-            EXPECT_THAT(result.error(), Eq(array<int, 3>::array_error::out_of_range));
+            static_assert(result.error() == array<int, 3>::array_error::out_of_range);
             EXPECT_NO_THROW(static_cast<void>(values.at_noexcept(3)));
         }
 
