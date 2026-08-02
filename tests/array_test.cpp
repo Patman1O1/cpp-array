@@ -760,8 +760,8 @@ namespace collections::array_testing {
             static_assert(std::same_as<decltype(values.cbegin()), array<int, 3>::const_iterator>);
             static_assert(std::is_const_v<std::remove_reference_t<decltype(*values.cbegin())>>);
 
-            EXPECT_THAT(values.cbegin(), Eq(values.data()));
-            EXPECT_THAT(values.cend() - values.cbegin(), Eq(3));
+            EXPECT_EQ(values.data(), values.cbegin());
+            EXPECT_EQ(3, values.cend() - values.cbegin());
         }
 
         TEST(array_iterators, rbegin_starts_at_the_last_element) {
