@@ -235,7 +235,7 @@ namespace collections::array_testing {
             const int& first = values[0];
             const int& second = values[1];
 
-            EXPECT_THAT(&second - &first, Eq(1));
+            EXPECT_EQ(1, &second - &first);
         }
 
         TEST(array_operators, random_access_const_overload_does_not_copy_a_non_trivial_element) {
