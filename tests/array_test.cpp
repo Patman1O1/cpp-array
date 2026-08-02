@@ -350,11 +350,11 @@ namespace collections::array_testing {
             const auto result = values.at_noexcept(0);
 
             ASSERT_TRUE(result.has_value());
-            EXPECT_THAT(result->get(), Eq(1));
-            EXPECT_THAT(&result->get(), Eq(&values[0]));
+            EXPECT_EQ(1, result->get());
+            EXPECT_EQ(&values[0], &result->get());
 
             result->get() = 10;
-            EXPECT_THAT(values[0], Eq(10));
+            EXPECT_EQ(10, values[0]);
 
             static_assert([] -> bool {
                 array inner = {1, 2, 3};
