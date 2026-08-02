@@ -406,9 +406,7 @@ namespace collections::array_testing {
             static_assert(2 == values.at_noexcept(1)->get());
 
             EXPECT_EQ(1, result->get());
-            EXPECT_EQ(&values[0], &result->get());
-            EXPECT_THAT(result->get(), Eq(1));
-            EXPECT_THAT(&result->get(), Eq(values.data()));
+            EXPECT_EQ(values.data(), &result->get());
         }
 
         TEST(array_methods, at_noexcept_const_overload_unexpected_return_value) {
