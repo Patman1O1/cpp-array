@@ -749,9 +749,9 @@ namespace collections::array_testing {
                 sum += value;
             }
 
-            EXPECT_THAT(sum, Eq(6));
-            EXPECT_THAT(values.begin(), Eq(values.data()));
-            EXPECT_THAT(values.end() - values.begin(), Eq(3));
+            EXPECT_EQ(6, sum);
+            EXPECT_EQ(values.data(), values.begin());
+            EXPECT_EQ(3, values.end() - values.begin());
         }
 
         TEST(array_iterators, cbegin_and_cend_are_const_on_a_mutable_array) {
