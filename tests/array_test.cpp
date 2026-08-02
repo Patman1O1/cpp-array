@@ -22,11 +22,6 @@
 
 namespace collections::array_testing {
     namespace {
-        // ── Aliases ──────────────────────────────────────────────────────────────────────────────────────────────────
-        using ::testing::ElementsAre;
-        using ::testing::Eq;
-        using ::testing::Ne;
-
         // ── Concepts ────────────────────────────────────────────────────────────────────────────
         template<typename T, typename... Args>
         concept brace_initializable = requires { T{std::declval<Args>()...}; };
