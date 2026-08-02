@@ -576,9 +576,9 @@ namespace collections::array_testing {
             constexpr array values = {1};
             static_assert(1 == values.back());
 
-            EXPECT_THAT(values.back(), Eq(1));
-            EXPECT_THAT(&values.back(), Eq(values.data()));
-            EXPECT_THAT(&values.back(), Eq(&values.front()));
+            EXPECT_EQ(1, values.back());
+            EXPECT_EQ(values.data(), &values.back());
+            EXPECT_EQ(&values.front(), &values.back());
         }
 
         TEST(array_methods, back_const_overload_multi_element_array) {
