@@ -478,12 +478,14 @@ namespace collections::array_testing {
             static_assert(noexcept(std::declval<const array<int, 1>&>().front()));
 
             constexpr array values = {1};
+
             static_assert(1 == values.front());
+            static_assert(&values[0] == &values.front());
             static_assert(values.front() == values.back());
 
-            EXPECT_THAT(values.front(), Eq(1));
-            EXPECT_THAT(&values.front(), Eq(&values[0]));
-            EXPECT_THAT(&values.front(), Eq(&values.back()));
+            EXPECT_EQ(1, values.front());
+            EXPECT_EQ(&values[0], &values.front());
+            EXPECT_EQ(&values.back(), &values.front());
         }
 
         TEST(array_methods, front_const_overload_multi_element_array) {
