@@ -592,9 +592,9 @@ namespace collections::array_testing {
             static_assert(3 == values.back());
             static_assert(values.back() == values[2]);
 
-            EXPECT_THAT(values.back(), Eq(3));
-            EXPECT_THAT(&values.back(), Eq(&values[2]));
-            EXPECT_THAT(&values.back() - &values.front(), Eq(2));
+            EXPECT_EQ(3, values.back());
+            EXPECT_EQ(&values[2], &values.back());
+            EXPECT_EQ(2, &values.back() - &values.front());
         }
 
         TEST(array_methods, data_returns_the_address_of_the_first_element) {
