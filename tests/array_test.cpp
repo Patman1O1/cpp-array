@@ -551,12 +551,14 @@ namespace collections::array_testing {
 
             array values = {1, 2, 3};
 
-            EXPECT_THAT(values.back(), Eq(3));
-            EXPECT_THAT(&values.back(), Eq(&values[2]));
-            EXPECT_THAT(&values.back() - &values.front(), Eq(2));
+            EXPECT_EQ(3, values.back());
+            EXPECT_EQ(&values[2], &values.back());
+            EXPECT_EQ(2, &values.back() - &values.front());
 
             values.back() = 30;
-            EXPECT_THAT(values, ElementsAre(1, 2, 30));
+            EXPECT_EQ(1, values[0]);
+            EXPECT_EQ(2, values[1]);
+            EXPECT_EQ(30, values[2]);
         }
 
         TEST(array_methods, back_const_overload_single_element_array) {
