@@ -283,8 +283,8 @@ namespace collections::array_testing {
             EXPECT_NO_THROW(static_cast<void>(values.at(2)));
 
             values.at(2) = 30;
-            EXPECT_THAT(values[2], Eq(30));
-            EXPECT_THAT(&values.at(2), Eq(&values[2]));
+            EXPECT_EQ(30, values[2]);
+            EXPECT_EQ(&values[2], &values.at(2));
         }
 
         TEST(array_methods, at_mut_overload_throws) {
