@@ -241,9 +241,9 @@ namespace collections::array_testing {
         TEST(array_operators, random_access_const_overload_does_not_copy_a_non_trivial_element) {
             const array values = {std::string("alpha"), std::string("beta")};
 
-            EXPECT_THAT(values[0], testing::Eq("alpha"));
+            EXPECT_EQ("alpha", values[0]);
 
-            EXPECT_THAT(&values[0], testing::Eq(values.data()));
+            EXPECT_EQ(values.data(), &values[0]);
         }
     } // namespace overloaded_operators_tests
 
