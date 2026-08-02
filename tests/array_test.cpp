@@ -677,11 +677,16 @@ namespace collections::array_testing {
 
             first.swap(second);
 
-            EXPECT_THAT(first, ElementsAre(4, 5, 6));
-            EXPECT_THAT(second, ElementsAre(1, 2, 3));
+            EXPECT_EQ(4, first[0]);
+            EXPECT_EQ(5, first[1]);
+            EXPECT_EQ(6, first[2]);
 
-            EXPECT_THAT(first.data(), Eq(first_data));
-            EXPECT_THAT(second.data(), Eq(second_data));
+            EXPECT_EQ(1, second_data[0]);
+            EXPECT_EQ(2, second_data[1]);
+            EXPECT_EQ(3, second_data[2]);
+
+            EXPECT_EQ(first_data, first.data());
+            EXPECT_EQ(second_data, second.data());
         }
 
         TEST(array_methods, swap_noexcept_follows_the_element_swap) {
