@@ -196,10 +196,10 @@ namespace collections::array_testing {
             const int& first = values[0];
             int& second = values[1];
 
-            EXPECT_THAT(&second - &first, Eq(1));
+            EXPECT_EQ(1, &second - &first);
 
             second = 20;
-            EXPECT_THAT(values[1], Eq(20));
+            EXPECT_EQ(20, values[1]);
         }
 
         TEST(array_operators, random_access_const_overload_returns_const_ref) {
