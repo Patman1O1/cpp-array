@@ -42,729 +42,738 @@ namespace collections::array_testing {
     } // namespace
 
     // ── Aggregate Tests ─────────────────────────────────────────────────────────────────────────
-    TEST(array_aggregate, is_an_aggregate) {
-        static_assert(std::is_aggregate_v<array<int, 3>>);
-        static_assert(std::is_aggregate_v<array<std::string, 2>>);
-
-        SUCCEED();
-    }
-
-    TEST(array_aggregate, brace_init_checks_arity_at_compile_time) {
-        static_assert(brace_initializable<array<int, 3>, int, int, int>);
-        static_assert(brace_initializable<array<int, 3>, int, int>);
-        static_assert(brace_initializable<array<int, 3>, int>);
-        static_assert(brace_initializable<array<int, 3>>);
-        static_assert(!brace_initializable<array<int, 3>, int, int, int, int>);
-
-        static_assert(!brace_initializable<array<int, 2>, int, std::string>);
-
-        SUCCEED();
-    }
-
-    TEST(array_aggregate, brace_init_rejects_narrowing) {
-        static_assert(!brace_initializable<array<int, 2>, double, double>);
-        static_assert(!brace_initializable<array<int, 2>, int, long long>);
-        static_assert(!brace_initializable<array<char, 2>, int, int>);
-
-        static_assert(!brace_initializable<array<double, 2>, int, int>);
-
-        SUCCEED();
-    }
-
-    TEST(array_aggregate, brace_init_value_initializes_the_unsupplied_tail) {
-        constexpr array<int, 3> values = {7};
-        static_assert(7 == values[0]);
-        static_assert(0 == values[1]);
-        static_assert(0 == values[2]);
-
-        SUCCEED();
-    }
-
-    TEST(array_aggregate, has_no_implicit_conversion_from_a_single_element) {
-        static_assert(!std::is_convertible_v<int, array<int, 3>>);
-
-        SUCCEED();
-    }
-
-    TEST(array_aggregate, brace_init_moves_rvalue_elements) {
-        std::string first = "a string long enough to defeat the small string optimization";
-        std::string second = "another string long enough to defeat the small string optimization";
-
-        const array values = {std::move(first), std::move(second)};
-
-        EXPECT_THAT(values[0], Eq("a string long enough to defeat the small string optimization"));
-        EXPECT_THAT(values[1], Eq("another string long enough to defeat the small string optimization"));
-
-        EXPECT_THAT(first, Ne("a string long enough to defeat the small string optimization"));
-        EXPECT_THAT(second, Ne("another string long enough to defeat the small string optimization"));
-    }
-
-    TEST(array_aggregate, special_members_are_implicit_and_trivial) {
-        static_assert(std::is_trivially_default_constructible_v<array<int, 3>>);
-        static_assert(std::is_trivially_copy_constructible_v<array<int, 3>>);
-        static_assert(std::is_trivially_move_constructible_v<array<int, 3>>);
-        static_assert(std::is_trivially_copy_assignable_v<array<int, 3>>);
-        static_assert(std::is_trivially_move_assignable_v<array<int, 3>>);
-        static_assert(std::is_trivially_destructible_v<array<int, 3>>);
-        static_assert(std::is_trivially_copyable_v<array<int, 3>>);
-
-        // Layout must match the bare C array it wraps.
-        static_assert(std::is_standard_layout_v<array<int, 3>>);
-        static_assert(sizeof(array<int, 3>) == sizeof(int[3]));
-        static_assert(alignof(array<int, 3>) == alignof(int[3]));
-
-        // A non-trivial value_type must propagate, not be papered over.
-        static_assert(!std::is_trivially_copyable_v<array<std::string, 2>>);
-        static_assert(std::is_copy_constructible_v<array<std::string, 2>>);
-        static_assert(std::is_move_constructible_v<array<std::string, 2>>);
-        static_assert(std::is_copy_assignable_v<array<std::string, 2>>);
-        static_assert(std::is_move_assignable_v<array<std::string, 2>>);
-
-        SUCCEED();
-    }
-
-    TEST(array_aggregate, copy_from_a_non_const_lvalue_is_a_trivial_copy) {
-        array source = {1, 2, 3};
-        array<int, 3> copy = source;
-
-        EXPECT_THAT(copy[0], testing::Eq(1));
-        EXPECT_THAT(copy[1], testing::Eq(2));
-        EXPECT_THAT(copy[2], testing::Eq(3));
-        EXPECT_THAT(copy.data(), testing::Ne(source.data()));
-    }
-
-    TEST(array_aggregate, copy_assignment_is_not_deleted) {
-        constexpr array source = {1, 2, 3};
-        array<int, 3> target = {};
-
-        target = source;
-
-        EXPECT_THAT(target[0], testing::Eq(1));
-        EXPECT_THAT(target[1], testing::Eq(2));
-        EXPECT_THAT(target[2], testing::Eq(3));
-    }
-
-    TEST(array_aggregate, deduces_its_template_arguments) {
-        array values = {1, 2, 3};
-        static_assert(std::same_as<decltype(values), array<int, 3>>);
-
-        [[maybe_unused]] array singleton = {1};
-        static_assert(std::same_as<decltype(singleton), array<int, 1>>);
-
-        static_assert(deducible<int, int, int>);
-        static_assert(!deducible<int, double>);
-
-        EXPECT_THAT(values, testing::ElementsAre(1, 2, 3));
-    }
-
-    TEST(array_aggregate, is_usable_as_a_non_type_template_parameter) {
-        static_assert(1 == nttp_probe<array{1, 2, 3}>::first);
-
-        SUCCEED();
-    }
-
-    // ── Overloaded Operators Tests ──────────────────────────────────────────────────────────────
-    TEST(array_operators, random_access_mut_overload_returns_mut_ref) {
-        static_assert(std::same_as<decltype(std::declval<array<int, 3>&>()[0]),
-                      array<int, 3>::reference>);
-        static_assert(
-            !std::is_const_v<std::remove_reference_t<decltype(std::declval<array<int, 3>&>()[0])>>
-        );
-
-        SUCCEED();
-    }
-
-    TEST(array_operators, random_access_mut_overload_is_noexcept) {
-        static_assert(noexcept(std::declval<array<int, 3>&>()[0]));
-
-        SUCCEED();
-    }
-
-    TEST(array_operators, random_access_mut_overload_is_usable_in_constant_expressions) {
-        static_assert([] -> bool {
-            array values = {1, 2, 3};
-            values[0] = 10;
-            return 10 == values[0] && 2 == values[1] && 3 == values[2];
-        }());
-
-        SUCCEED();
-    }
-
-    TEST(array_operators, random_access_mut_overload_aliases_storage) {
-        array values = {1, 2, 3};
-
-        const int& first = values[0];
-        int& second = values[1];
-
-        EXPECT_THAT(&second - &first, Eq(1));
-
-        second = 20;
-        EXPECT_THAT(values[1], Eq(20));
-    }
-
-    TEST(array_operators, random_access_const_overload_returns_const_ref) {
-        static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>()[0]),
-                      array<int, 3>::const_reference>);
-        static_assert(
-            std::is_const_v<
-                std::remove_reference_t<decltype(std::declval<const array<int, 3>&>()[0])>
-            >
-        );
-
-        SUCCEED();
-    }
-
-    TEST(array_operators, random_access_const_overload_is_noexcept) {
-        static_assert(noexcept(std::declval<const array<int, 3>&>()[0]));
-
-        SUCCEED();
-    }
-
-    TEST(array_operators, random_access_const_overload_is_usable_in_constant_expressions) {
-        constexpr array values = {1, 2, 3};
-        static_assert(1 == values[0]);
-        static_assert(2 == values[1]);
-        static_assert(3 == values[2]);
-
-        SUCCEED();
-    }
-
-    TEST(array_operators, random_access_const_overload_aliases_storage) {
-        constexpr array values = {1, 2, 3};
-
-        const int& first = values[0];
-        const int& second = values[1];
-
-        EXPECT_THAT(&second - &first, Eq(1));
-    }
-
-    TEST(array_operators, random_access_const_overload_does_not_copy_a_non_trivial_element) {
-        const array values = {std::string("alpha"), std::string("beta")};
-
-        EXPECT_THAT(values[0], testing::Eq("alpha"));
-
-        EXPECT_THAT(&values[0], testing::Eq(values.data()));
-    }
-
-    // ── Method Tests ────────────────────────────────────────────────────────────────────────────
-    TEST(array_methods, at_mut_overload_returns_mut_ref) {
-        static_assert(
-            std::same_as<
-                decltype(std::declval<array<int, 3>&>().at(0)), array<int, 3>::reference
-            >
-        );
-
-        static_assert(
-            !std::is_const_v<
-                std::remove_reference_t<decltype(std::declval<array<int, 3>&>().at(0))>
-            >
-        );
-
-        SUCCEED();
-    }
-
-    TEST(array_methods, at_mut_overload_is_not_noexcept) {
-        static_assert(!noexcept(std::declval<array<int, 3>&>().at(0)));
-
-        SUCCEED();
-    }
-
-    TEST(array_methods, at_mut_overload_does_not_throw) {
-        static_assert([] -> bool {
-            array values = {1, 2, 3};
-            values.at(0) = 10;
-            return 10 == values.at(0) && 2 == values.at(1) && 3 == values.at(2);
-        }());
-
-        array values = {1, 2, 3};
-        EXPECT_NO_THROW(static_cast<void>(values.at(0)));
-        EXPECT_NO_THROW(static_cast<void>(values.at(2)));
-
-        values.at(2) = 30;
-        EXPECT_THAT(values[2], Eq(30));
-        EXPECT_THAT(&values.at(2), Eq(&values[2]));
-    }
-
-    TEST(array_methods, at_mut_overload_throws) {
-        array values = {1, 2, 3};
-
-        EXPECT_THROW(static_cast<void>(values.at(3)), std::out_of_range);
-        EXPECT_THROW(
-            static_cast<void>(
-                values.at(std::numeric_limits<array<int, 3>::size_type>::max())
-            ), std::out_of_range
-        );
-    }
-
-    TEST(array_methods, at_const_overload_returns_const_ref) {
-        static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>().at(0)),
-                                   array<int, 3>::const_reference>);
-        static_assert(
-            std::is_const_v<
-                std::remove_reference_t<decltype(std::declval<const array<int, 3>&>().at(0))>
-            >
-        );
-
-        SUCCEED();
-    }
-
-    TEST(array_methods, at_const_overload_is_not_noexcept) {
-        static_assert(!noexcept(std::declval<const array<int, 3>&>().at(0)));
-
-        SUCCEED();
-    }
-
-    TEST(array_methods, at_const_overload_does_not_throw) {
-        constexpr array values = {1, 2, 3};
-        static_assert(1 == values.at(0));
-        static_assert(2 == values.at(1));
-        static_assert(3 == values.at(2));
-
-        EXPECT_NO_THROW(static_cast<void>(values.at(0)));
-        EXPECT_NO_THROW(static_cast<void>(values.at(2)));
-        EXPECT_THAT(&values.at(2), Eq(&values[2]));
-    }
-
-    TEST(array_methods, at_const_overload_throws) {
-        constexpr array values = {1, 2, 3};
-
-        EXPECT_THROW(static_cast<void>(values.at(3)), std::out_of_range);
-        EXPECT_THROW(static_cast<void>(
-            values.at(std::numeric_limits<array<int, 3>::size_type>::max())),
-            std::out_of_range
-        );
-    }
-
-    TEST(array_methods, at_noexcept_mut_overload_expected_return_value) {
-        static_assert(noexcept(std::declval<array<int, 3>&>().at_noexcept(0)));
-        static_assert(
-            std::same_as<
-                decltype(std::declval<array<int, 3>&>().at_noexcept(0)),
-                std::expected<std::reference_wrapper<int>, array<int, 3>::array_error>
-            >
-        );
-
-        array values = {1, 2, 3};
-        const auto result = values.at_noexcept(0);
-
-        ASSERT_TRUE(result.has_value());
-        EXPECT_THAT(result->get(), Eq(1));
-        EXPECT_THAT(&result->get(), Eq(&values[0]));
-
-        result->get() = 10;
-        EXPECT_THAT(values[0], Eq(10));
-
-        static_assert([] -> bool {
-            array inner = {1, 2, 3};
-            const auto ok = inner.at_noexcept(2);
-            return ok.has_value() && 3 == ok->get();
-        }());
-    }
-
-    TEST(array_methods, at_noexcept_mut_overload_unexpected_return_value) {
-        array values = {1, 2, 3};
-
-        constexpr auto result = values.at_noexcept(3);
-        ASSERT_FALSE(result.has_value());
-        EXPECT_THAT(result.error(), Eq(array<int, 3>::array_error::out_of_range));
-
-        constexpr auto far_result = values.at_noexcept(
-            std::numeric_limits<array<int, 3>::size_type>::max()
-        );
-        ASSERT_FALSE(far_result.has_value());
-        EXPECT_THAT(far_result.error(), Eq(array<int, 3>::array_error::out_of_range));
-
-        EXPECT_NO_THROW(static_cast<void>(values.at_noexcept(3)));
-
-        static_assert([] -> bool {
-            array inner = {1, 2, 3};
-            constexpr auto err = inner.at_noexcept(3);
-            return array<int, 3>::array_error::out_of_range == err.error();
-        }());
-    }
-
-    TEST(array_methods, at_noexcept_const_overload_expected_return_value) {
-        static_assert(noexcept(std::declval<const array<int, 3>&>().at_noexcept(0)));
-        static_assert(
-            std::same_as<
-                decltype(std::declval<const array<int, 3>&>().at_noexcept(0)),
-                std::expected<std::reference_wrapper<const int>, array<int, 3>::array_error>
-            >
-        );
-
-        static constexpr array values = {1, 2, 3};
-        constexpr auto result = values.at_noexcept(0);
-
-        static_assert(result.has_value());
-        static_assert(1 == result->get());
-        static_assert(std::is_const_v<std::remove_reference_t<decltype(result->get())>>);
-        static_assert(2 == values.at_noexcept(1)->get());
-
-        EXPECT_THAT(result->get(), Eq(1));
-        EXPECT_THAT(&result->get(), Eq(values.data()));
-    }
-
-    TEST(array_methods, at_noexcept_const_overload_unexpected_return_value) {
-        constexpr array values = {1, 2, 3};
-
-        static_assert(!values.at_noexcept(3).has_value());
-        static_assert(array<int, 3>::array_error::out_of_range == values.at_noexcept(3).error());
-
-        constexpr auto result = values.at_noexcept(3);
-        ASSERT_FALSE(result.has_value());
-        EXPECT_THAT(result.error(), Eq(array<int, 3>::array_error::out_of_range));
-        EXPECT_NO_THROW(static_cast<void>(values.at_noexcept(3)));
-    }
-
-    TEST(array_methods, front_mut_overload_single_element_array) {
-        static_assert(std::same_as<decltype(std::declval<array<int, 1>&>().front()), array<int, 1>::reference>);
-        static_assert(noexcept(std::declval<array<int, 1>&>().front()));
-
-        static_assert([] -> bool {
-            array values = {1};
-            values.front() = 10;
-            return 10 == values.front() && 10 == values[0];
-        }());
-
-        array values = {1};
-        EXPECT_THAT(values.front(), Eq(1));
-        EXPECT_THAT(&values.front(), Eq(values.data()));
-
-        // With one element, front and back are the same object.
-        EXPECT_THAT(&values.front(), Eq(&values.back()));
-
-        values.front() = 10;
-        EXPECT_THAT(values[0], Eq(10));
-    }
-
-    TEST(array_methods, front_mut_overload_multi_element_array) {
-        static_assert(
-            std::same_as<
-                decltype(std::declval<array<int, 3>&>().front()), array<int, 3>::reference
-            >
-        );
-        static_assert(noexcept(std::declval<array<int, 3>&>().front()));
-
-        static_assert([] -> bool {
-            array values = {1, 2, 3};
-            values.front() = 10;
-            return 10 == values.front() && 10 == values[0] && 2 == values[1] && 3 == values[2];
-        }());
-
-        array values = {1, 2, 3};
-        EXPECT_THAT(values.front(), Eq(1));
-        EXPECT_THAT(&values.front(), Eq(values.data()));
-        EXPECT_THAT(&values.front(), Ne(&values.back()));
-
-        values.front() = 10;
-        EXPECT_THAT(values, ElementsAre(10, 2, 3));
-    }
-
-    TEST(array_methods, front_const_overload_single_element_array) {
-        static_assert(std::same_as<decltype(std::declval<const array<int, 1>&>().front()),
-                                   array<int, 1>::const_reference>);
-        static_assert(
-            std::is_const_v<
-                std::remove_reference_t<decltype(std::declval<const array<int, 1>&>().front())>
-            >
-        );
-        static_assert(noexcept(std::declval<const array<int, 1>&>().front()));
-
-        constexpr array values = {1};
-        static_assert(1 == values.front());
-        static_assert(values.front() == values.back());
-
-        EXPECT_THAT(values.front(), Eq(1));
-        EXPECT_THAT(&values.front(), Eq(&values[0]));
-        EXPECT_THAT(&values.front(), Eq(&values.back()));
-    }
-
-    TEST(array_methods, front_const_overload_multi_element_array) {
-        static_assert(
-            std::same_as<
-                decltype(std::declval<const array<int, 3>&>().front()),
-                array<int, 3>::const_reference
-            >
-        );
-
-        static_assert(
-            std::is_const_v<
-                std::remove_reference_t<decltype(std::declval<const array<int, 3>&>().front())>
-            >
-        );
-
-        static_assert(noexcept(std::declval<const array<int, 3>&>().front()));
-
-        constexpr array values = {1, 2, 3};
-        static_assert(1 == values.front());
-        static_assert(values.front() == values[0]);
-
-        EXPECT_THAT(values.front(), Eq(1));
-        EXPECT_THAT(&values.front(), Eq(values.data()));
-        EXPECT_THAT(&values.front(), Ne(&values.back()));
-    }
-
-    TEST(array_methods, back_mut_overload_single_element_array) {
-        static_assert(
-            std::same_as<decltype(std::declval<array<int, 1>&>().back()), array<int, 1>::reference>
-        );
-        static_assert(noexcept(std::declval<array<int, 1>&>().back()));
-
-        static_assert([] -> bool {
-            array values = {1};
-            values.back() = 10;
-            return 10 == values.back() && 10 == values.front();
-        }());
-
-        array values = {1};
-        EXPECT_THAT(values.back(), Eq(1));
-        EXPECT_THAT(&values.back(), Eq(values.data()));
-        EXPECT_THAT(&values.back(), Eq(&values.front()));
-
-        values.back() = 10;
-        EXPECT_THAT(values[0], Eq(10));
-    }
-
-    TEST(array_methods, back_mut_overload_multi_element_array) {
-        static_assert(
-            std::same_as<decltype(std::declval<array<int, 3>&>().back()), array<int, 3>::reference>
-        );
-        static_assert(noexcept(std::declval<array<int, 3>&>().back()));
-
-        static_assert([] -> bool {
-            array values = {1, 2, 3};
-            values.back() = 30;
-            return 30 == values.back() && 1 == values[0] && 2 == values[1] && 30 == values[2];
-        }());
-
-        array values = {1, 2, 3};
-
-        EXPECT_THAT(values.back(), Eq(3));
-        EXPECT_THAT(&values.back(), Eq(&values[2]));
-        EXPECT_THAT(&values.back() - &values.front(), Eq(2));
-
-        values.back() = 30;
-        EXPECT_THAT(values, ElementsAre(1, 2, 30));
-    }
-
-    TEST(array_methods, back_const_overload_single_element_array) {
-        static_assert(
-            std::same_as<
-                decltype(
-                    std::declval<const array<int, 1>&>().back()
-                ), array<int, 1>::const_reference
-            >
-        );
-        static_assert(std::is_const_v<
-            std::remove_reference_t<decltype(std::declval<const array<int, 1>&>().back())>>);
-        static_assert(noexcept(std::declval<const array<int, 1>&>().back()));
-
-        constexpr array values = {1};
-        static_assert(1 == values.back());
-
-        EXPECT_THAT(values.back(), Eq(1));
-        EXPECT_THAT(&values.back(), Eq(values.data()));
-        EXPECT_THAT(&values.back(), Eq(&values.front()));
-    }
-
-    TEST(array_methods, back_const_overload_multi_element_array) {
-        static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>().back()),
-                                   array<int, 3>::const_reference>);
-        static_assert(std::is_const_v<
-            std::remove_reference_t<decltype(std::declval<const array<int, 3>&>().back())>>);
-        static_assert(noexcept(std::declval<const array<int, 3>&>().back()));
-
-        constexpr array values = {1, 2, 3};
-        static_assert(3 == values.back());
-        static_assert(values.back() == values[2]);
-
-        EXPECT_THAT(values.back(), Eq(3));
-        EXPECT_THAT(&values.back(), Eq(&values[2]));
-        EXPECT_THAT(&values.back() - &values.front(), Eq(2));
-    }
-
-    TEST(array_methods, data_returns_the_address_of_the_first_element) {
-        static_assert(
-            std::same_as<decltype(std::declval<array<int, 3>&>().data()), array<int, 3>::pointer>
-        );
-
-        static_assert(
-            std::same_as<decltype(std::declval<const array<int, 3>&>().data()),
-            array<int, 3>::const_pointer>
-        );
-
-        static_assert(noexcept(std::declval<array<int, 3>&>().data()));
-
-        array values = {1, 2, 3};
-        EXPECT_THAT(values.data(), Eq(values.data()));
-        EXPECT_THAT(values.data() + 2, Eq(&values[2]));
-    }
-
-    TEST(array_methods, size_and_max_size_and_empty_are_compile_time_constants) {
-        static_assert(3 == array<int, 3>{}.size());
-        static_assert(3 == array<int, 3>{}.max_size());
-        static_assert(!array<int, 3>{}.empty());
-        static_assert(1 == array<int, 1>{}.size());
-        static_assert(!array<int, 1>{}.empty());
-
-        static_assert(noexcept(std::declval<const array<int, 3>&>().size()));
-        static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>().size()),
-                                   array<int, 3>::size_type>);
-
-        SUCCEED();
-    }
-
-    TEST(array_methods, fill_sets_every_element) {
-        static_assert([] -> bool {
-            array values = {1, 2, 3};
-            values.fill(7);
-            return 7 == values[0] && 7 == values[1] && 7 == values[2];
-        }());
-
-        array values = {1, 2, 3};
-        values.fill(7);
-        EXPECT_THAT(values, ElementsAre(7, 7, 7));
-
-        const int* const before = values.data();
-        values.fill(0);
-        EXPECT_THAT(values.data(), Eq(before));
-        EXPECT_THAT(values, ElementsAre(0, 0, 0));
-    }
-
-    TEST(array_methods, fill_noexcept_follows_the_element_assignment) {
-        static_assert(noexcept(std::declval<array<int, 3>&>().fill(0)));
-
-        static_assert(
-            !noexcept(
-                std::declval<array<std::string, 2>&>().fill(std::declval<const std::string&>())
-            )
-        );
-
-        SUCCEED();
-    }
-
-    TEST(array_methods, swap_exchanges_contents_not_addresses) {
-        static_assert([] -> bool {
-            array first = {1, 2, 3};
-            array second = {4, 5, 6};
-            first.swap(second);
-            return 4 == first[0] && 6 == first[2] && 1 == second[0] && 3 == second[2];
-        }());
-
-        array first = {1, 2, 3};
-        array second = {4, 5, 6};
-
-        const int* const first_data = first.data();
-        const int* const second_data = second.data();
-
-        first.swap(second);
-
-        EXPECT_THAT(first, ElementsAre(4, 5, 6));
-        EXPECT_THAT(second, ElementsAre(1, 2, 3));
-
-        EXPECT_THAT(first.data(), Eq(first_data));
-        EXPECT_THAT(second.data(), Eq(second_data));
-    }
-
-    TEST(array_methods, swap_noexcept_follows_the_element_swap) {
-        static_assert(
-            noexcept(std::declval<array<int, 3>&>().swap(std::declval<array<int, 3>&>()))
-        );
-
-        static_assert(std::is_nothrow_swappable_v<std::string>);
-        static_assert(
-            noexcept(
-                std::declval<array<std::string, 2>&>().swap(std::declval<array<std::string, 2>&>())
-            )
-        );
-
-        SUCCEED();
-    }
-
-    // ── Iterator Tests ──────────────────────────────────────────────────────────────────────────
-    TEST(array_iterators, satisfies_contiguous_range_mutably_and_constly) {
-        static_assert(std::ranges::contiguous_range<array<int, 3>>);
-
-        static_assert(std::ranges::contiguous_range<const array<int, 3>>);
-        static_assert(std::ranges::sized_range<array<int, 3>>);
-
-        static_assert(std::same_as<std::ranges::range_value_t<array<int, 3>>, int>);
-        static_assert(
-            std::same_as<decltype(std::declval<array<int, 3>&>().begin()), array<int, 3>::iterator>
-        );
-        static_assert(
-            std::same_as<decltype(std::declval<const array<int, 3>&>().begin()),
-            array<int, 3>::const_iterator>
-        );
-
-        SUCCEED();
-    }
-
-    TEST(array_iterators, begin_and_end_span_the_array) {
-        static_assert([] -> bool {
-            array values = {1, 2, 3};
-            *values.begin() = 10;
-            return 10 == values[0] && values.end() - values.begin() == 3;
-        }());
-
-        array values = {1, 2, 3};
-
-        EXPECT_THAT(values.begin(), Eq(values.data()));
-        EXPECT_THAT(values.end(), Eq(values.data() + 3));
-        EXPECT_THAT(values.end() - values.begin(), Eq(3));
-        EXPECT_THAT(*values.begin(), Eq(1));
-        EXPECT_THAT(*(values.end() - 1), Eq(3));
-    }
-
-    TEST(array_iterators, a_const_array_is_iterable_with_a_range_for) {
-        constexpr array values = {1, 2, 3};
-
-        int sum = 0;
-        for (const int value : values) {
-            sum += value;
+    namespace aggregate_tests {
+        TEST(array_aggregate, is_aggregate) {
+            static_assert(std::is_aggregate_v<array<int, 3>>);
+            static_assert(std::is_aggregate_v<array<std::string, 2>>);
+
+            SUCCEED();
         }
 
-        EXPECT_THAT(sum, Eq(6));
-        EXPECT_THAT(values.begin(), Eq(values.data()));
-        EXPECT_THAT(values.end() - values.begin(), Eq(3));
-    }
+        TEST(array_aggregate, brace_init_checks_arity_at_compile_time) {
+            static_assert(brace_initializable<array<int, 3>, int, int, int>);
+            static_assert(brace_initializable<array<int, 3>, int, int>);
+            static_assert(brace_initializable<array<int, 3>, int>);
+            static_assert(brace_initializable<array<int, 3>>);
+            static_assert(!brace_initializable<array<int, 3>, int, int, int, int>);
 
-    TEST(array_iterators, cbegin_and_cend_are_const_on_a_mutable_array) {
-        array values = {1, 2, 3};
+            static_assert(!brace_initializable<array<int, 2>, int, std::string>);
 
-        static_assert(std::same_as<decltype(values.cbegin()), array<int, 3>::const_iterator>);
-        static_assert(std::is_const_v<std::remove_reference_t<decltype(*values.cbegin())>>);
+            SUCCEED();
+        }
 
-        EXPECT_THAT(values.cbegin(), Eq(values.data()));
-        EXPECT_THAT(values.cend() - values.cbegin(), Eq(3));
-    }
+        TEST(array_aggregate, brace_init_rejects_narrowing) {
+            static_assert(!brace_initializable<array<int, 2>, double, double>);
+            static_assert(!brace_initializable<array<int, 2>, int, long long>);
+            static_assert(!brace_initializable<array<char, 2>, int, int>);
 
-    TEST(array_iterators, rbegin_starts_at_the_last_element) {
-        array values = {1, 2, 3};
+            static_assert(!brace_initializable<array<double, 2>, int, int>);
 
-        EXPECT_THAT(*values.rbegin(), Eq(3));
-        EXPECT_THAT(*(values.rend() - 1), Eq(1));
-        EXPECT_THAT(values.rend() - values.rbegin(), Eq(3));
-        EXPECT_THAT(&*values.rbegin(), Eq(&values.back()));
-        EXPECT_THAT((std::vector(values.rbegin(), values.rend())), ElementsAre(3, 2, 1));
+            SUCCEED();
+        }
 
-        *values.rbegin() = 30;
-        EXPECT_THAT(values, ElementsAre(1, 2, 30));
-    }
+        TEST(array_aggregate, brace_init_value_initializes_the_unsupplied_tail) {
+            constexpr array<int, 3> values = {7};
+            static_assert(7 == values[0]);
+            static_assert(0 == values[1]);
+            static_assert(0 == values[2]);
 
-    TEST(array_iterators, crbegin_and_crend_walk_backwards_constly) {
-        constexpr array values = {1, 2, 3};
+            SUCCEED();
+        }
 
-        static_assert(
-            std::same_as<decltype(values.crbegin()), array<int, 3>::const_reverse_iterator>
-        );
-        static_assert(std::is_const_v<std::remove_reference_t<decltype(*values.crbegin())>>);
+        TEST(array_aggregate, has_no_implicit_conversion_from_a_single_element) {
+            static_assert(!std::is_convertible_v<int, array<int, 3>>);
 
-        EXPECT_THAT(*values.crbegin(), Eq(3));
-        EXPECT_THAT(*(values.crend() - 1), Eq(1));
-        EXPECT_THAT(values.crend() - values.crbegin(), Eq(3));
-        EXPECT_THAT(
-            (std::vector(values.crbegin(), values.crend())), testing::ElementsAre(3, 2, 1)
-        );
-    }
+            SUCCEED();
+        }
+
+        TEST(array_aggregate, brace_init_moves_rvalue_elements) {
+            std::string first = "a string long enough to defeat the small string optimization";
+            std::string second = "another string long enough to defeat the small string optimization";
+
+            const array values = {std::move(first), std::move(second)};
+
+            EXPECT_THAT(values[0], Eq("a string long enough to defeat the small string optimization"));
+            EXPECT_THAT(values[1], Eq("another string long enough to defeat the small string optimization"));
+
+            EXPECT_THAT(first, Ne("a string long enough to defeat the small string optimization"));
+            EXPECT_THAT(second, Ne("another string long enough to defeat the small string optimization"));
+        }
+
+        TEST(array_aggregate, special_members_are_implicit_and_trivial) {
+            static_assert(std::is_trivially_default_constructible_v<array<int, 3>>);
+            static_assert(std::is_trivially_copy_constructible_v<array<int, 3>>);
+            static_assert(std::is_trivially_move_constructible_v<array<int, 3>>);
+            static_assert(std::is_trivially_copy_assignable_v<array<int, 3>>);
+            static_assert(std::is_trivially_move_assignable_v<array<int, 3>>);
+            static_assert(std::is_trivially_destructible_v<array<int, 3>>);
+            static_assert(std::is_trivially_copyable_v<array<int, 3>>);
+
+            // Layout must match the bare C array it wraps.
+            static_assert(std::is_standard_layout_v<array<int, 3>>);
+            static_assert(sizeof(array<int, 3>) == sizeof(int[3]));
+            static_assert(alignof(array<int, 3>) == alignof(int[3]));
+
+            // A non-trivial value_type must propagate, not be papered over.
+            static_assert(!std::is_trivially_copyable_v<array<std::string, 2>>);
+            static_assert(std::is_copy_constructible_v<array<std::string, 2>>);
+            static_assert(std::is_move_constructible_v<array<std::string, 2>>);
+            static_assert(std::is_copy_assignable_v<array<std::string, 2>>);
+            static_assert(std::is_move_assignable_v<array<std::string, 2>>);
+
+            SUCCEED();
+        }
+
+        TEST(array_aggregate, copy_from_a_non_const_lvalue_is_a_trivial_copy) {
+            array source = {1, 2, 3};
+            array<int, 3> copy = source;
+
+            EXPECT_THAT(copy[0], testing::Eq(1));
+            EXPECT_THAT(copy[1], testing::Eq(2));
+            EXPECT_THAT(copy[2], testing::Eq(3));
+            EXPECT_THAT(copy.data(), testing::Ne(source.data()));
+        }
+
+        TEST(array_aggregate, copy_assignment_is_not_deleted) {
+            constexpr array source = {1, 2, 3};
+            array<int, 3> target = {};
+
+            target = source;
+
+            EXPECT_EQ(1, target[0]);
+            EXPECT_EQ(2, target[1]);
+            EXPECT_EQ(3, target[2]);
+        }
+
+        TEST(array_aggregate, deduces_its_template_arguments) {
+            array values = {1, 2, 3};
+            static_assert(std::same_as<decltype(values), array<int, 3>>);
+
+            [[maybe_unused]] array singleton = {1};
+            static_assert(std::same_as<decltype(singleton), array<int, 1>>);
+
+            static_assert(deducible<int, int, int>);
+            static_assert(!deducible<int, double>);
+
+            EXPECT_THAT(values, testing::ElementsAre(1, 2, 3));
+        }
+
+        TEST(array_aggregate, is_usable_as_a_non_type_template_parameter) {
+            static_assert(1 == nttp_probe<array{1, 2, 3}>::first);
+
+            SUCCEED();
+        }
+    } // namespace aggregate_tests
+
+    // ── Overloaded Operators Tests ──────────────────────────────────────────────────────────────
+    namespace overloaded_operators_tests {
+        TEST(array_operators, random_access_mut_overload_returns_mut_ref) {
+            static_assert(std::same_as<decltype(std::declval<array<int, 3>&>()[0]),
+                          array<int, 3>::reference>);
+            static_assert(
+                !std::is_const_v<std::remove_reference_t<decltype(std::declval<array<int, 3>&>()[0])>>
+            );
+
+            SUCCEED();
+        }
+
+        TEST(array_operators, random_access_mut_overload_is_noexcept) {
+            static_assert(noexcept(std::declval<array<int, 3>&>()[0]));
+
+            SUCCEED();
+        }
+
+        TEST(array_operators, random_access_mut_overload_is_usable_in_constant_expressions) {
+            static_assert([] -> bool {
+                array values = {1, 2, 3};
+                values[0] = 10;
+                return 10 == values[0] && 2 == values[1] && 3 == values[2];
+            }());
+
+            SUCCEED();
+        }
+
+        TEST(array_operators, random_access_mut_overload_aliases_storage) {
+            array values = {1, 2, 3};
+
+            const int& first = values[0];
+            int& second = values[1];
+
+            EXPECT_THAT(&second - &first, Eq(1));
+
+            second = 20;
+            EXPECT_THAT(values[1], Eq(20));
+        }
+
+        TEST(array_operators, random_access_const_overload_returns_const_ref) {
+            static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>()[0]),
+                          array<int, 3>::const_reference>);
+            static_assert(
+                std::is_const_v<
+                    std::remove_reference_t<decltype(std::declval<const array<int, 3>&>()[0])>
+                >
+            );
+
+            SUCCEED();
+        }
+
+        TEST(array_operators, random_access_const_overload_is_noexcept) {
+            static_assert(noexcept(std::declval<const array<int, 3>&>()[0]));
+
+            SUCCEED();
+        }
+
+        TEST(array_operators, random_access_const_overload_is_usable_in_constant_expressions) {
+            constexpr array values = {1, 2, 3};
+            static_assert(1 == values[0]);
+            static_assert(2 == values[1]);
+            static_assert(3 == values[2]);
+
+            SUCCEED();
+        }
+
+        TEST(array_operators, random_access_const_overload_aliases_storage) {
+            constexpr array values = {1, 2, 3};
+
+            const int& first = values[0];
+            const int& second = values[1];
+
+            EXPECT_THAT(&second - &first, Eq(1));
+        }
+
+        TEST(array_operators, random_access_const_overload_does_not_copy_a_non_trivial_element) {
+            const array values = {std::string("alpha"), std::string("beta")};
+
+            EXPECT_THAT(values[0], testing::Eq("alpha"));
+
+            EXPECT_THAT(&values[0], testing::Eq(values.data()));
+        }
+    } // namespace overloaded_operators_tests
+
+    // ── Method Tests ────────────────────────────────────────────────────────────────────────────
+    namespace methods_tests {
+        TEST(array_methods, at_mut_overload_returns_mut_ref) {
+            static_assert(
+                std::same_as<
+                    decltype(std::declval<array<int, 3>&>().at(0)), array<int, 3>::reference
+                >
+            );
+
+            static_assert(
+                !std::is_const_v<
+                    std::remove_reference_t<decltype(std::declval<array<int, 3>&>().at(0))>
+                >
+            );
+
+            SUCCEED();
+        }
+
+        TEST(array_methods, at_mut_overload_is_not_noexcept) {
+            static_assert(!noexcept(std::declval<array<int, 3>&>().at(0)));
+
+            SUCCEED();
+        }
+
+        TEST(array_methods, at_mut_overload_does_not_throw) {
+            static_assert([] -> bool {
+                array values = {1, 2, 3};
+                values.at(0) = 10;
+                return 10 == values.at(0) && 2 == values.at(1) && 3 == values.at(2);
+            }());
+
+            array values = {1, 2, 3};
+            EXPECT_NO_THROW(static_cast<void>(values.at(0)));
+            EXPECT_NO_THROW(static_cast<void>(values.at(2)));
+
+            values.at(2) = 30;
+            EXPECT_THAT(values[2], Eq(30));
+            EXPECT_THAT(&values.at(2), Eq(&values[2]));
+        }
+
+        TEST(array_methods, at_mut_overload_throws) {
+            array values = {1, 2, 3};
+
+            EXPECT_THROW(static_cast<void>(values.at(3)), std::out_of_range);
+            EXPECT_THROW(
+                static_cast<void>(
+                    values.at(std::numeric_limits<array<int, 3>::size_type>::max())
+                ), std::out_of_range
+            );
+        }
+
+        TEST(array_methods, at_const_overload_returns_const_ref) {
+            static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>().at(0)),
+                                       array<int, 3>::const_reference>);
+            static_assert(
+                std::is_const_v<
+                    std::remove_reference_t<decltype(std::declval<const array<int, 3>&>().at(0))>
+                >
+            );
+
+            SUCCEED();
+        }
+
+        TEST(array_methods, at_const_overload_is_not_noexcept) {
+            static_assert(!noexcept(std::declval<const array<int, 3>&>().at(0)));
+
+            SUCCEED();
+        }
+
+        TEST(array_methods, at_const_overload_does_not_throw) {
+            constexpr array values = {1, 2, 3};
+            static_assert(1 == values.at(0));
+            static_assert(2 == values.at(1));
+            static_assert(3 == values.at(2));
+
+            EXPECT_NO_THROW(static_cast<void>(values.at(0)));
+            EXPECT_NO_THROW(static_cast<void>(values.at(2)));
+            EXPECT_THAT(&values.at(2), Eq(&values[2]));
+        }
+
+        TEST(array_methods, at_const_overload_throws) {
+            constexpr array values = {1, 2, 3};
+
+            EXPECT_THROW(static_cast<void>(values.at(3)), std::out_of_range);
+            EXPECT_THROW(static_cast<void>(
+                values.at(std::numeric_limits<array<int, 3>::size_type>::max())),
+                std::out_of_range
+            );
+        }
+
+        TEST(array_methods, at_noexcept_mut_overload_expected_return_value) {
+            static_assert(noexcept(std::declval<array<int, 3>&>().at_noexcept(0)));
+            static_assert(
+                std::same_as<
+                    decltype(std::declval<array<int, 3>&>().at_noexcept(0)),
+                    std::expected<std::reference_wrapper<int>, array<int, 3>::array_error>
+                >
+            );
+
+            array values = {1, 2, 3};
+            const auto result = values.at_noexcept(0);
+
+            ASSERT_TRUE(result.has_value());
+            EXPECT_THAT(result->get(), Eq(1));
+            EXPECT_THAT(&result->get(), Eq(&values[0]));
+
+            result->get() = 10;
+            EXPECT_THAT(values[0], Eq(10));
+
+            static_assert([] -> bool {
+                array inner = {1, 2, 3};
+                const auto ok = inner.at_noexcept(2);
+                return ok.has_value() && 3 == ok->get();
+            }());
+        }
+
+        TEST(array_methods, at_noexcept_mut_overload_unexpected_return_value) {
+            array values = {1, 2, 3};
+
+            constexpr auto result = values.at_noexcept(3);
+            ASSERT_FALSE(result.has_value());
+            EXPECT_THAT(result.error(), Eq(array<int, 3>::array_error::out_of_range));
+
+            constexpr auto far_result = values.at_noexcept(
+                std::numeric_limits<array<int, 3>::size_type>::max()
+            );
+            ASSERT_FALSE(far_result.has_value());
+            EXPECT_THAT(far_result.error(), Eq(array<int, 3>::array_error::out_of_range));
+
+            EXPECT_NO_THROW(static_cast<void>(values.at_noexcept(3)));
+
+            static_assert([] -> bool {
+                array inner = {1, 2, 3};
+                constexpr auto err = inner.at_noexcept(3);
+                return array<int, 3>::array_error::out_of_range == err.error();
+            }());
+        }
+
+        TEST(array_methods, at_noexcept_const_overload_expected_return_value) {
+            static_assert(noexcept(std::declval<const array<int, 3>&>().at_noexcept(0)));
+            static_assert(
+                std::same_as<
+                    decltype(std::declval<const array<int, 3>&>().at_noexcept(0)),
+                    std::expected<std::reference_wrapper<const int>, array<int, 3>::array_error>
+                >
+            );
+
+            static constexpr array values = {1, 2, 3};
+            constexpr auto result = values.at_noexcept(0);
+
+            static_assert(result.has_value());
+            static_assert(1 == result->get());
+            static_assert(std::is_const_v<std::remove_reference_t<decltype(result->get())>>);
+            static_assert(2 == values.at_noexcept(1)->get());
+
+            EXPECT_THAT(result->get(), Eq(1));
+            EXPECT_THAT(&result->get(), Eq(values.data()));
+        }
+
+        TEST(array_methods, at_noexcept_const_overload_unexpected_return_value) {
+            constexpr array values = {1, 2, 3};
+
+            static_assert(!values.at_noexcept(3).has_value());
+            static_assert(array<int, 3>::array_error::out_of_range == values.at_noexcept(3).error());
+
+            constexpr auto result = values.at_noexcept(3);
+            ASSERT_FALSE(result.has_value());
+            EXPECT_THAT(result.error(), Eq(array<int, 3>::array_error::out_of_range));
+            EXPECT_NO_THROW(static_cast<void>(values.at_noexcept(3)));
+        }
+
+        TEST(array_methods, front_mut_overload_single_element_array) {
+            static_assert(std::same_as<decltype(std::declval<array<int, 1>&>().front()), array<int, 1>::reference>);
+            static_assert(noexcept(std::declval<array<int, 1>&>().front()));
+
+            static_assert([] -> bool {
+                array values = {1};
+                values.front() = 10;
+                return 10 == values.front() && 10 == values[0];
+            }());
+
+            array values = {1};
+            EXPECT_THAT(values.front(), Eq(1));
+            EXPECT_THAT(&values.front(), Eq(values.data()));
+
+            // With one element, front and back are the same object.
+            EXPECT_THAT(&values.front(), Eq(&values.back()));
+
+            values.front() = 10;
+            EXPECT_THAT(values[0], Eq(10));
+        }
+
+        TEST(array_methods, front_mut_overload_multi_element_array) {
+            static_assert(
+                std::same_as<
+                    decltype(std::declval<array<int, 3>&>().front()), array<int, 3>::reference
+                >
+            );
+            static_assert(noexcept(std::declval<array<int, 3>&>().front()));
+
+            static_assert([] -> bool {
+                array values = {1, 2, 3};
+                values.front() = 10;
+                return 10 == values.front() && 10 == values[0] && 2 == values[1] && 3 == values[2];
+            }());
+
+            array values = {1, 2, 3};
+            EXPECT_THAT(values.front(), Eq(1));
+            EXPECT_THAT(&values.front(), Eq(values.data()));
+            EXPECT_THAT(&values.front(), Ne(&values.back()));
+
+            values.front() = 10;
+            EXPECT_THAT(values, ElementsAre(10, 2, 3));
+        }
+
+        TEST(array_methods, front_const_overload_single_element_array) {
+            static_assert(std::same_as<decltype(std::declval<const array<int, 1>&>().front()),
+                                       array<int, 1>::const_reference>);
+            static_assert(
+                std::is_const_v<
+                    std::remove_reference_t<decltype(std::declval<const array<int, 1>&>().front())>
+                >
+            );
+            static_assert(noexcept(std::declval<const array<int, 1>&>().front()));
+
+            constexpr array values = {1};
+            static_assert(1 == values.front());
+            static_assert(values.front() == values.back());
+
+            EXPECT_THAT(values.front(), Eq(1));
+            EXPECT_THAT(&values.front(), Eq(&values[0]));
+            EXPECT_THAT(&values.front(), Eq(&values.back()));
+        }
+
+        TEST(array_methods, front_const_overload_multi_element_array) {
+            static_assert(
+                std::same_as<
+                    decltype(std::declval<const array<int, 3>&>().front()),
+                    array<int, 3>::const_reference
+                >
+            );
+
+            static_assert(
+                std::is_const_v<
+                    std::remove_reference_t<decltype(std::declval<const array<int, 3>&>().front())>
+                >
+            );
+
+            static_assert(noexcept(std::declval<const array<int, 3>&>().front()));
+
+            constexpr array values = {1, 2, 3};
+            static_assert(1 == values.front());
+            static_assert(values.front() == values[0]);
+
+            EXPECT_THAT(values.front(), Eq(1));
+            EXPECT_THAT(&values.front(), Eq(values.data()));
+            EXPECT_THAT(&values.front(), Ne(&values.back()));
+        }
+
+        TEST(array_methods, back_mut_overload_single_element_array) {
+            static_assert(
+                std::same_as<decltype(std::declval<array<int, 1>&>().back()), array<int, 1>::reference>
+            );
+            static_assert(noexcept(std::declval<array<int, 1>&>().back()));
+
+            static_assert([] -> bool {
+                array values = {1};
+                values.back() = 10;
+                return 10 == values.back() && 10 == values.front();
+            }());
+
+            array values = {1};
+            EXPECT_THAT(values.back(), Eq(1));
+            EXPECT_THAT(&values.back(), Eq(values.data()));
+            EXPECT_THAT(&values.back(), Eq(&values.front()));
+
+            values.back() = 10;
+            EXPECT_THAT(values[0], Eq(10));
+        }
+
+        TEST(array_methods, back_mut_overload_multi_element_array) {
+            static_assert(
+                std::same_as<decltype(std::declval<array<int, 3>&>().back()), array<int, 3>::reference>
+            );
+            static_assert(noexcept(std::declval<array<int, 3>&>().back()));
+
+            static_assert([] -> bool {
+                array values = {1, 2, 3};
+                values.back() = 30;
+                return 30 == values.back() && 1 == values[0] && 2 == values[1] && 30 == values[2];
+            }());
+
+            array values = {1, 2, 3};
+
+            EXPECT_THAT(values.back(), Eq(3));
+            EXPECT_THAT(&values.back(), Eq(&values[2]));
+            EXPECT_THAT(&values.back() - &values.front(), Eq(2));
+
+            values.back() = 30;
+            EXPECT_THAT(values, ElementsAre(1, 2, 30));
+        }
+
+        TEST(array_methods, back_const_overload_single_element_array) {
+            static_assert(
+                std::same_as<
+                    decltype(
+                        std::declval<const array<int, 1>&>().back()
+                    ), array<int, 1>::const_reference
+                >
+            );
+            static_assert(std::is_const_v<
+                std::remove_reference_t<decltype(std::declval<const array<int, 1>&>().back())>>);
+            static_assert(noexcept(std::declval<const array<int, 1>&>().back()));
+
+            constexpr array values = {1};
+            static_assert(1 == values.back());
+
+            EXPECT_THAT(values.back(), Eq(1));
+            EXPECT_THAT(&values.back(), Eq(values.data()));
+            EXPECT_THAT(&values.back(), Eq(&values.front()));
+        }
+
+        TEST(array_methods, back_const_overload_multi_element_array) {
+            static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>().back()),
+                                       array<int, 3>::const_reference>);
+            static_assert(std::is_const_v<
+                std::remove_reference_t<decltype(std::declval<const array<int, 3>&>().back())>>);
+            static_assert(noexcept(std::declval<const array<int, 3>&>().back()));
+
+            constexpr array values = {1, 2, 3};
+            static_assert(3 == values.back());
+            static_assert(values.back() == values[2]);
+
+            EXPECT_THAT(values.back(), Eq(3));
+            EXPECT_THAT(&values.back(), Eq(&values[2]));
+            EXPECT_THAT(&values.back() - &values.front(), Eq(2));
+        }
+
+        TEST(array_methods, data_returns_the_address_of_the_first_element) {
+            static_assert(
+                std::same_as<decltype(std::declval<array<int, 3>&>().data()), array<int, 3>::pointer>
+            );
+
+            static_assert(
+                std::same_as<decltype(std::declval<const array<int, 3>&>().data()),
+                array<int, 3>::const_pointer>
+            );
+
+            static_assert(noexcept(std::declval<array<int, 3>&>().data()));
+
+            array values = {1, 2, 3};
+            EXPECT_THAT(values.data(), Eq(values.data()));
+            EXPECT_THAT(values.data() + 2, Eq(&values[2]));
+        }
+
+        TEST(array_methods, size_and_max_size_and_empty_are_compile_time_constants) {
+            static_assert(3 == array<int, 3>{}.size());
+            static_assert(3 == array<int, 3>{}.max_size());
+            static_assert(!array<int, 3>{}.empty());
+            static_assert(1 == array<int, 1>{}.size());
+            static_assert(!array<int, 1>{}.empty());
+
+            static_assert(noexcept(std::declval<const array<int, 3>&>().size()));
+            static_assert(std::same_as<decltype(std::declval<const array<int, 3>&>().size()),
+                                       array<int, 3>::size_type>);
+
+            SUCCEED();
+        }
+
+        TEST(array_methods, fill_sets_every_element) {
+            static_assert([] -> bool {
+                array values = {1, 2, 3};
+                values.fill(7);
+                return 7 == values[0] && 7 == values[1] && 7 == values[2];
+            }());
+
+            array values = {1, 2, 3};
+            values.fill(7);
+            EXPECT_THAT(values, ElementsAre(7, 7, 7));
+
+            const int* const before = values.data();
+            values.fill(0);
+            EXPECT_THAT(values.data(), Eq(before));
+            EXPECT_THAT(values, ElementsAre(0, 0, 0));
+        }
+
+        TEST(array_methods, fill_noexcept_follows_the_element_assignment) {
+            static_assert(noexcept(std::declval<array<int, 3>&>().fill(0)));
+
+            static_assert(
+                !noexcept(
+                    std::declval<array<std::string, 2>&>().fill(std::declval<const std::string&>())
+                )
+            );
+
+            SUCCEED();
+        }
+
+        TEST(array_methods, swap_exchanges_contents_not_addresses) {
+            static_assert([] -> bool {
+                array first = {1, 2, 3};
+                array second = {4, 5, 6};
+                first.swap(second);
+                return 4 == first[0] && 6 == first[2] && 1 == second[0] && 3 == second[2];
+            }());
+
+            array first = {1, 2, 3};
+            array second = {4, 5, 6};
+
+            const int* const first_data = first.data();
+            const int* const second_data = second.data();
+
+            first.swap(second);
+
+            EXPECT_THAT(first, ElementsAre(4, 5, 6));
+            EXPECT_THAT(second, ElementsAre(1, 2, 3));
+
+            EXPECT_THAT(first.data(), Eq(first_data));
+            EXPECT_THAT(second.data(), Eq(second_data));
+        }
+
+        TEST(array_methods, swap_noexcept_follows_the_element_swap) {
+            static_assert(
+                noexcept(std::declval<array<int, 3>&>().swap(std::declval<array<int, 3>&>()))
+            );
+
+            static_assert(std::is_nothrow_swappable_v<std::string>);
+            static_assert(
+                noexcept(
+                    std::declval<array<std::string, 2>&>().swap(std::declval<array<std::string, 2>&>())
+                )
+            );
+
+            SUCCEED();
+        }
+    } // namespace methods_tests
+
+    // ── Iterator Tests ──────────────────────────────────────────────────────────────────────────
+    namespace iterator_tests {
+        TEST(array_iterators, satisfies_contiguous_range_mutably_and_constly) {
+            static_assert(std::ranges::contiguous_range<array<int, 3>>);
+
+            static_assert(std::ranges::contiguous_range<const array<int, 3>>);
+            static_assert(std::ranges::sized_range<array<int, 3>>);
+
+            static_assert(std::same_as<std::ranges::range_value_t<array<int, 3>>, int>);
+            static_assert(
+                std::same_as<decltype(std::declval<array<int, 3>&>().begin()), array<int, 3>::iterator>
+            );
+            static_assert(
+                std::same_as<decltype(std::declval<const array<int, 3>&>().begin()),
+                array<int, 3>::const_iterator>
+            );
+
+            SUCCEED();
+        }
+
+        TEST(array_iterators, begin_and_end_span_the_array) {
+            static_assert([] -> bool {
+                array values = {1, 2, 3};
+                *values.begin() = 10;
+                return 10 == values[0] && values.end() - values.begin() == 3;
+            }());
+
+            array values = {1, 2, 3};
+
+            EXPECT_THAT(values.begin(), Eq(values.data()));
+            EXPECT_THAT(values.end(), Eq(values.data() + 3));
+            EXPECT_THAT(values.end() - values.begin(), Eq(3));
+            EXPECT_THAT(*values.begin(), Eq(1));
+            EXPECT_THAT(*(values.end() - 1), Eq(3));
+        }
+
+        TEST(array_iterators, a_const_array_is_iterable_with_a_range_for) {
+            constexpr array values = {1, 2, 3};
+
+            int sum = 0;
+            for (const int value : values) {
+                sum += value;
+            }
+
+            EXPECT_THAT(sum, Eq(6));
+            EXPECT_THAT(values.begin(), Eq(values.data()));
+            EXPECT_THAT(values.end() - values.begin(), Eq(3));
+        }
+
+        TEST(array_iterators, cbegin_and_cend_are_const_on_a_mutable_array) {
+            array values = {1, 2, 3};
+
+            static_assert(std::same_as<decltype(values.cbegin()), array<int, 3>::const_iterator>);
+            static_assert(std::is_const_v<std::remove_reference_t<decltype(*values.cbegin())>>);
+
+            EXPECT_THAT(values.cbegin(), Eq(values.data()));
+            EXPECT_THAT(values.cend() - values.cbegin(), Eq(3));
+        }
+
+        TEST(array_iterators, rbegin_starts_at_the_last_element) {
+            array values = {1, 2, 3};
+
+            EXPECT_THAT(*values.rbegin(), Eq(3));
+            EXPECT_THAT(*(values.rend() - 1), Eq(1));
+            EXPECT_THAT(values.rend() - values.rbegin(), Eq(3));
+            EXPECT_THAT(&*values.rbegin(), Eq(&values.back()));
+            EXPECT_THAT((std::vector(values.rbegin(), values.rend())), ElementsAre(3, 2, 1));
+
+            *values.rbegin() = 30;
+            EXPECT_THAT(values, ElementsAre(1, 2, 30));
+        }
+
+        TEST(array_iterators, crbegin_and_crend_walk_backwards_constly) {
+            constexpr array values = {1, 2, 3};
+
+            static_assert(
+                std::same_as<decltype(values.crbegin()), array<int, 3>::const_reverse_iterator>
+            );
+            static_assert(std::is_const_v<std::remove_reference_t<decltype(*values.crbegin())>>);
+
+            EXPECT_THAT(*values.crbegin(), Eq(3));
+            EXPECT_THAT(*(values.crend() - 1), Eq(1));
+            EXPECT_THAT(values.crend() - values.crbegin(), Eq(3));
+            EXPECT_THAT(
+                (std::vector(values.crbegin(), values.crend())), testing::ElementsAre(3, 2, 1)
+            );
+        }
+    } // namespace iterator_tests
+
 } // namespace collections::array_testing
