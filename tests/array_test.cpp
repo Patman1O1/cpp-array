@@ -432,14 +432,14 @@ namespace collections::array_testing {
             }());
 
             array values = {1};
-            EXPECT_THAT(values.front(), Eq(1));
-            EXPECT_THAT(&values.front(), Eq(values.data()));
+            EXPECT_EQ(1, values.front());
+            EXPECT_EQ(values.data(), &values.front());
 
             // With one element, front and back are the same object.
-            EXPECT_THAT(&values.front(), Eq(&values.back()));
+            EXPECT_EQ(&values.back(), &values.front());
 
             values.front() = 10;
-            EXPECT_THAT(values[0], Eq(10));
+            EXPECT_EQ(10, values[0]);
         }
 
         TEST(array_methods, front_mut_overload_multi_element_array) {
