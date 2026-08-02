@@ -457,12 +457,14 @@ namespace collections::array_testing {
             }());
 
             array values = {1, 2, 3};
-            EXPECT_THAT(values.front(), Eq(1));
-            EXPECT_THAT(&values.front(), Eq(values.data()));
-            EXPECT_THAT(&values.front(), Ne(&values.back()));
+            EXPECT_EQ(1, values.front());
+            EXPECT_EQ(values.data(), &values.front());
+            EXPECT_NE(&values.back(), &values.front());
 
             values.front() = 10;
-            EXPECT_THAT(values, ElementsAre(10, 2, 3));
+            EXPECT_EQ(10, values[0]);
+            EXPECT_EQ(2, values[1]);
+            EXPECT_EQ(3, values[2]);
         }
 
         TEST(array_methods, front_const_overload_single_element_array) {
