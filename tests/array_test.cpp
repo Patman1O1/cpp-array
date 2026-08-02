@@ -516,7 +516,9 @@ namespace collections::array_testing {
 
         TEST(array_methods, back_mut_overload_single_element_array) {
             static_assert(
-                std::same_as<decltype(std::declval<array<int, 1>&>().back()), array<int, 1>::reference>
+                std::same_as<
+                    decltype(std::declval<array<int, 1>&>().back()), array<int, 1>::reference
+                >
             );
             static_assert(noexcept(std::declval<array<int, 1>&>().back()));
 
@@ -527,9 +529,9 @@ namespace collections::array_testing {
             }());
 
             array values = {1};
-            EXPECT_THAT(values.back(), Eq(1));
-            EXPECT_THAT(&values.back(), Eq(values.data()));
-            EXPECT_THAT(&values.back(), Eq(&values.front()));
+            EXPECT_EQ(1, values.back());
+            EXPECT_EQ(values.data(), &values.back());
+            EXPECT_EQ(&values.front(), &values.back());
 
             values.back() = 10;
             EXPECT_THAT(values[0], Eq(10));
