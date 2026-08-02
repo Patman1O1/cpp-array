@@ -155,7 +155,9 @@ namespace collections::array_testing {
             static_assert(deducible<int, int, int>);
             static_assert(!deducible<int, double>);
 
-            EXPECT_THAT(values, testing::ElementsAre(1, 2, 3));
+            EXPECT_EQ(1, values[0]);
+            EXPECT_EQ(2, values[1]);
+            EXPECT_EQ(3, values[2]);
         }
 
         TEST(array_aggregate, is_usable_as_a_non_type_template_parameter) {
