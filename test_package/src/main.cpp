@@ -1,9 +1,12 @@
-#include <array>
-#include <initializer_list>
+#include <exception>
 #include <iostream>
 
-int main() {
-    for (auto val : array) {
-        std::println(std::cout, "{}", val);
+auto main() -> int {
+    try {
+        
+        return 0;
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return 1;
     }
 }
