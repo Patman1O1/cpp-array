@@ -150,55 +150,67 @@ namespace collections {
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto front() noexcept -> reference {
             return this->values_[0];
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto front() const noexcept -> const_reference {
             return this->values_[0];
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto back() noexcept -> reference {
             return this->values_[this->size() - 1];
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto back() const noexcept -> const_reference {
             return this->values_[this->size() - 1];
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto data() noexcept -> pointer { return this->values_; }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto data() const noexcept -> const_pointer {
             return this->values_;
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto begin() noexcept -> iterator { return this->values_; }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto end() noexcept -> iterator { return this->values_ + N; }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto begin() const noexcept -> const_iterator {
             return this->values_;
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto end() const noexcept -> const_iterator {
             return this->values_ + N;
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto cbegin() const noexcept -> const_iterator {
             return this->values_;
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto cend() const noexcept -> const_iterator {
             return this->values_ + N;
         }
@@ -234,12 +246,15 @@ namespace collections {
         }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto empty() const noexcept -> bool { return N == 0; }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto size() const noexcept -> size_type { return N; }
 
         [[nodiscard]]
+        [[gnu::always_inline]]
         constexpr auto max_size() const noexcept -> size_type { return N; }
 
         constexpr void fill(
