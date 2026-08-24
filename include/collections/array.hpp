@@ -20,7 +20,7 @@ namespace collections {
     template<typename T, std::size_t N>
     class array {
     public:
-        // ── Aliases ───────────────────────────────────────────────────────────────────────────────────
+        // ── Aliases ─────────────────────────────────────────────────────────
         using value_type = T;
 
         using size_type = std::size_t;
@@ -43,149 +43,216 @@ namespace collections {
 
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        // ── array_error ─────────────────────────────────────────────────────────────────────────
+        // ── array_error ─────────────────────────────────────────────────────
         enum class array_error : std::uint8_t { out_of_range, };
 
-        // ── Fields ──────────────────────────────────────────────────────────────────────────────
+        // ── Fields ──────────────────────────────────────────────────────────
         value_type values_[N];
 
-        // ── Overloaded Operators ────────────────────────────────────────────────────────────────
-        [[nodiscard]] constexpr auto operator==(const array&) const -> bool = default;
-
-        [[nodiscard]] constexpr auto operator<=>(const array&)
-            const -> std::strong_ordering = default;
-
-        [[nodiscard]] constexpr auto operator[](const size_type index) noexcept -> reference {
-            return this->values_[index];
+        // ── Overloaded Operators ────────────────────────────────────────────
+        [[nodiscard]]
+        constexpr auto operator==(const array& rhs) const noexcept(
+            noexcept(std::declval<value_type>() == std::declval<value_type>())
+        ) -> bool {
+            return std::equal(this->begin(), this->end(), rhs.begin());
         }
 
-        [[nodiscard]] constexpr auto operator[](const size_type index) const noexcept
-            -> const_reference {
-            return this->values_[index];
+        [[nodiscard]]
+        constexpr auto operator<=>(const array& rhs) const noexcept(
+            noexcept(std::declval<value_type>() <=> std::declval<value_type>())
+        ) -> std::compare_three_way_result_t<value_type> {
+            return std::lexicographical_compare_three_way(
+                this->values_, this->values_ + N,
+                rhs.values_, rhs.values_ + N
+            );
         }
+        
+        [[nodiscard]]
+        constexpr auto operator[](
+            const size_type index
+        ) noexcept -> reference { return this->values_[index]; }
+
+        [[nodiscard]]
+        constexpr auto operator[](
+            const size_type index
+        ) const noexcept -> const_reference { return this->values_[index]; }
 
     private:
-        // ── Methods ──────────────────────────────────────────────────────────────────────────────────
-        template<std::predicate<bool, value_type, value_type> Predicate>
-        inline constexpr void _sort(iterator first, iterator last, Predicate pred) {
-            std::sort(first, last, pred);
-        }
+        // ── Methods ─────────────────────────────────────────────────────────
+        template<
+            std::contiguous_iterator Iterator = iterator,
+            std::predicate<bool, value_type, value_type> Predicate
+        >
+        constexpr void _sort(
+            Iterator first,
+            Iterator last,
+            Predicate pred
+        ) { std::sort(first, last, pred); }
 
-        template<std::predicate<bool, value_type, value_type> Predicate>
-        inline constexpr void _stable_sort(iterator first, iterator last, Predicate pred) {
-            std::stable_sort(first, last, pred);
-        }
+        template<
+            std::contiguous_iterator Iterator = iterator,
+            std::predicate<bool, value_type, value_type> Predicate
+        >
+        constexpr void _stable_sort(
+            Iterator first,
+            Iterator last,
+            Predicate pred
+        ) { std::stable_sort(first, last, pred); }
 
     public:
-        // ── Methods ──────────────────────────────────────────────────────────────────────────────────
-        [[nodiscard]] constexpr auto at(const size_type index) -> reference {
+        // ── Methods ─────────────────────────────────────────────────────────
+        [[nodiscard]]
+        constexpr auto at(const size_type index) -> reference {
             if (index >= N) [[unlikely]] {
-                throw std::out_of_range("collections::array::at index out of range");
+                throw std::out_of_range(
+                    "collections::array::at index out of range"
+                );
             }
             return this->values_[index];
         }
 
-        [[nodiscard]] constexpr auto at(const size_type index) const -> const_reference {
+        [[nodiscard]]
+        constexpr auto at(
+            const size_type index
+        ) const -> const_reference {
             if (index >= N) [[unlikely]] {
-                throw std::out_of_range("collections::array::at index out of range");
+                throw std::out_of_range(
+                    "collections::array::at index out of range"
+                );
             }
             return this->values_[index];
         }
-        [[nodiscard]] constexpr auto at_noexcept(const size_type index) noexcept
-            -> std::expected<std::reference_wrapper<value_type>, array_error> {
+        [[nodiscard]]
+        constexpr auto at_noexcept(
+            const size_type index
+        ) noexcept -> std::expected<
+            std::reference_wrapper<value_type>, array_error
+        > {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
 
-        [[nodiscard]] constexpr auto at_noexcept(const size_type index) const noexcept
-            -> std::expected<std::reference_wrapper<const value_type>, array_error> {
+        [[nodiscard]]
+        constexpr auto at_noexcept(
+            const size_type index
+        ) const noexcept -> std::expected<
+            std::reference_wrapper<const value_type>, array_error
+        > {
             if (index >= N) [[unlikely]] {
                 return std::unexpected(array_error::out_of_range);
             }
-            return std::reference_wrapper<const value_type>(this->values_[index]);
+
+            return std::reference_wrapper<const value_type>(
+                this->values_[index]
+            );
         }
 
-        [[nodiscard]] constexpr auto front() noexcept -> reference { return this->values_[0]; }
-
-        [[nodiscard]] constexpr auto front() const noexcept -> const_reference {
+        [[nodiscard]]
+        constexpr auto front() noexcept -> reference {
             return this->values_[0];
         }
 
-        [[nodiscard]] constexpr auto back() noexcept -> reference {
+        [[nodiscard]]
+        constexpr auto front() const noexcept -> const_reference {
+            return this->values_[0];
+        }
+
+        [[nodiscard]]
+        constexpr auto back() noexcept -> reference {
             return this->values_[this->size() - 1];
         }
 
-        [[nodiscard]] constexpr auto back() const noexcept -> const_reference {
+        [[nodiscard]]
+        constexpr auto back() const noexcept -> const_reference {
             return this->values_[this->size() - 1];
         }
 
-        [[nodiscard]] constexpr auto data() noexcept -> pointer { return this->values_; }
+        [[nodiscard]]
+        constexpr auto data() noexcept -> pointer { return this->values_; }
 
-        [[nodiscard]] constexpr auto data() const noexcept -> const_pointer {
+        [[nodiscard]]
+        constexpr auto data() const noexcept -> const_pointer {
             return this->values_;
         }
 
-        [[nodiscard]] constexpr auto begin() noexcept -> iterator { return this->values_; }
+        [[nodiscard]]
+        constexpr auto begin() noexcept -> iterator { return this->values_; }
 
-        [[nodiscard]] constexpr auto end() noexcept -> iterator { return this->values_ + N; }
+        [[nodiscard]]
+        constexpr auto end() noexcept -> iterator { return this->values_ + N; }
 
-        [[nodiscard]] constexpr auto begin() const noexcept -> const_iterator {
+        [[nodiscard]]
+        constexpr auto begin() const noexcept -> const_iterator {
             return this->values_;
         }
 
-        [[nodiscard]] constexpr auto end() const noexcept -> const_iterator {
+        [[nodiscard]]
+        constexpr auto end() const noexcept -> const_iterator {
             return this->values_ + N;
         }
 
-        [[nodiscard]] constexpr auto cbegin() const noexcept -> const_iterator {
+        [[nodiscard]]
+        constexpr auto cbegin() const noexcept -> const_iterator {
             return this->values_;
         }
 
-        [[nodiscard]] constexpr auto cend() const noexcept -> const_iterator {
+        [[nodiscard]]
+        constexpr auto cend() const noexcept -> const_iterator {
             return this->values_ + N;
         }
 
-        [[nodiscard]] constexpr auto rbegin() noexcept -> reverse_iterator {
+        [[nodiscard]]
+        constexpr auto rbegin() noexcept -> reverse_iterator {
             return reverse_iterator(this->end());
         }
 
-        [[nodiscard]] constexpr auto rend() noexcept -> reverse_iterator {
+        [[nodiscard]]
+        constexpr auto rend() noexcept -> reverse_iterator {
             return reverse_iterator(this->begin());
         }
 
-        [[nodiscard]] constexpr auto rbegin() const noexcept -> const_reverse_iterator {
+        [[nodiscard]]
+        constexpr auto rbegin() const noexcept -> const_reverse_iterator {
             return const_reverse_iterator(this->end());
         }
 
-        [[nodiscard]] constexpr auto rend() const noexcept -> const_reverse_iterator {
+        [[nodiscard]]
+        constexpr auto rend() const noexcept -> const_reverse_iterator {
             return const_reverse_iterator(this->begin());
         }
 
-        [[nodiscard]] constexpr auto crbegin() const noexcept -> const_reverse_iterator {
+        [[nodiscard]]
+        constexpr auto crbegin() const noexcept -> const_reverse_iterator {
             return this->rbegin();
         }
 
-        [[nodiscard]] constexpr auto crend() const noexcept -> const_reverse_iterator {
+        [[nodiscard]]
+        constexpr auto crend() const noexcept -> const_reverse_iterator {
             return this->rend();
         }
 
-        [[nodiscard]] constexpr auto empty() const noexcept -> bool { return N == 0; }
+        [[nodiscard]]
+        constexpr auto empty() const noexcept -> bool { return N == 0; }
 
-        [[nodiscard]] constexpr auto size() const noexcept -> size_type { return N; }
+        [[nodiscard]]
+        constexpr auto size() const noexcept -> size_type { return N; }
 
-        [[nodiscard]] constexpr auto max_size() const noexcept -> size_type { return N; }
+        [[nodiscard]]
+        constexpr auto max_size() const noexcept -> size_type { return N; }
 
-        constexpr void fill(const_reference value)
-            noexcept(std::is_nothrow_copy_assignable_v<value_type>) {
-            std::fill(this->begin(), this->end(), value);
-        }
+        constexpr void fill(
+            const_reference value
+        ) noexcept(
+            noexcept(std::is_nothrow_copy_assignable_v<value_type>)
+        ) { std::fill(this->begin(), this->end(), value); }
 
-        constexpr void swap(array& other)
-            noexcept(std::is_nothrow_swappable_v<value_type>) {
-            std::swap(this->values_, other.values_);
-        }
+        constexpr void swap(
+            array& other
+        ) noexcept(
+            noexcept(std::is_nothrow_swappable_v<value_type>)
+        ) { std::swap(this->values_, other.values_); }
 
         constexpr void sort() {
             this->_sort(this->begin(), this->end(), std::less<value_type>{});
@@ -199,8 +266,10 @@ namespace collections {
             this->_sort(first, last, std::less<value_type>{});
         }
 
-        template<std::contiguous_iterator Iterator = iterator,
-                 std::predicate<bool, value_type, value_type> Predicate>
+        template<
+            std::contiguous_iterator Iterator = iterator,
+            std::predicate<bool, value_type, value_type> Predicate
+        >
         constexpr void sort(Iterator first, Iterator last, Predicate pred) {
             if (first == last) [[unlikely]] {
                 return;
@@ -210,7 +279,11 @@ namespace collections {
 
 
         constexpr void stable_sort() {
-            this->_stable_sort(this->begin(), this->end(), std::less<value_type>{});
+            this->_stable_sort(
+                this->begin(),
+                this->end(),
+                std::less<value_type>{}
+            );
         }
 
         constexpr void stable_sort(iterator first, iterator last) {
@@ -221,7 +294,11 @@ namespace collections {
         }
 
         template<std::predicate<bool, value_type, value_type> Predicate>
-        constexpr void stable_sort(iterator first, iterator last, Predicate pred) {
+        constexpr void stable_sort(
+            iterator first,
+            iterator last,
+            Predicate pred
+        ) {
             if (first == last) [[unlikely]] {
                 return;
             }
@@ -232,7 +309,5 @@ namespace collections {
     // ── Deduction Guides ────────────────────────────────────────────────────────────────────────
     template<typename T, typename... U> requires (std::same_as<T, U> && ...)
     array(T, U...) -> array<T, 1 + sizeof...(U)>;
-
 } // namespace collections
-
-#endif // #ifndef COLLECTIONS_ARRAY_HPP
+#endif // #ifndef ARRAY_HPP
