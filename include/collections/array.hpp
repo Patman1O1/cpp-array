@@ -43,8 +43,8 @@ namespace collections {
 
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        // ── array_error ─────────────────────────────────────────────────────
-        enum class array_error : std::uint8_t { out_of_range, };
+        // ── error ───────────────────────────────────────────────────────────
+        enum class error : std::uint8_t { out_of_range, };
 
         // ── Fields ──────────────────────────────────────────────────────────
         value_type values_[N];
@@ -81,7 +81,7 @@ namespace collections {
         // ── Methods ─────────────────────────────────────────────────────────
         template<
             std::contiguous_iterator Iterator = iterator,
-            std::predicate<bool, value_type, value_type> Predicate
+            std::predicate<value_type, value_type> Predicate
         >
         constexpr void _sort(
             Iterator first,
@@ -91,7 +91,7 @@ namespace collections {
 
         template<
             std::contiguous_iterator Iterator = iterator,
-            std::predicate<bool, value_type, value_type> Predicate
+            std::predicate<value_type, value_type> Predicate
         >
         constexpr void _stable_sort(
             Iterator first,
@@ -112,9 +112,7 @@ namespace collections {
         }
 
         [[nodiscard]]
-        constexpr auto at(
-            const size_type index
-        ) const -> const_reference {
+        constexpr auto at(const size_type index) const -> const_reference {
             if (index >= N) [[unlikely]] {
                 throw std::out_of_range(
                     "collections::array::at index out of range"
@@ -122,26 +120,27 @@ namespace collections {
             }
             return this->values_[index];
         }
+
         [[nodiscard]]
-        constexpr auto at_noexcept(
+        constexpr auto expect_at(
             const size_type index
         ) noexcept -> std::expected<
-            std::reference_wrapper<value_type>, array_error
+            std::reference_wrapper<value_type>, error
         > {
             if (index >= N) [[unlikely]] {
-                return std::unexpected(array_error::out_of_range);
+                return std::unexpected(error::out_of_range);
             }
             return std::reference_wrapper<value_type>(this->values_[index]);
         }
 
         [[nodiscard]]
-        constexpr auto at_noexcept(
+        constexpr auto expect_at(
             const size_type index
         ) const noexcept -> std::expected<
-            std::reference_wrapper<const value_type>, array_error
+            std::reference_wrapper<const value_type>, error
         > {
             if (index >= N) [[unlikely]] {
-                return std::unexpected(array_error::out_of_range);
+                return std::unexpected(error::out_of_range);
             }
 
             return std::reference_wrapper<const value_type>(
@@ -259,13 +258,13 @@ namespace collections {
 
         constexpr void fill(
             const_reference value
-        ) noexcept(
-            noexcept(std::is_nothrow_copy_assignable_v<value_type>)
+        ) noexcept (
+            std::is_nothrow_copy_assignable_v<value_type>
         ) { std::fill(this->begin(), this->end(), value); }
 
         constexpr void swap(
             array& other
-        ) noexcept(
+        ) noexcept (
             noexcept(std::is_nothrow_swappable_v<value_type>)
         ) { std::swap(this->values_, other.values_); }
 
@@ -283,7 +282,7 @@ namespace collections {
 
         template<
             std::contiguous_iterator Iterator = iterator,
-            std::predicate<bool, value_type, value_type> Predicate
+            std::predicate<value_type, value_type> Predicate
         >
         constexpr void sort(Iterator first, Iterator last, Predicate pred) {
             if (first == last) [[unlikely]] {
@@ -291,7 +290,6 @@ namespace collections {
             }
             this->_sort(first, last, pred);
         }
-
 
         constexpr void stable_sort() {
             this->_stable_sort(
@@ -301,17 +299,21 @@ namespace collections {
             );
         }
 
-        constexpr void stable_sort(iterator first, iterator last) {
+        template<std::contiguous_iterator Iterator = iterator>
+        constexpr void stable_sort(Iterator first, Iterator last) {
             if (first == last) [[unlikely]] {
                 return;
             }
             this->_stable_sort(first, last, std::less<value_type>{});
         }
 
-        template<std::predicate<bool, value_type, value_type> Predicate>
+        template<
+            std::contiguous_iterator Iterator,
+            std::predicate<value_type, value_type> Predicate
+        >
         constexpr void stable_sort(
-            iterator first,
-            iterator last,
+            Iterator first,
+            Iterator last,
             Predicate pred
         ) {
             if (first == last) [[unlikely]] {
